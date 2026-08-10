@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getWorkspace } from "@/lib/data/workspace";
 import { Money, Percent } from "@/components/ui/Figure";
+import { Magnitude } from "@/components/viz/Bullet";
+import { Severity } from "@/components/viz/Severity";
 import { formatKm } from "@/lib/format";
 import type { StockAction, StockRecommendation } from "@/lib/engine/stock";
 import type { Opportunity } from "@/lib/engine/sourcing";
@@ -31,6 +33,11 @@ export default async function TodayPage() {
   const actions = stock.filter((review) => review.action !== "hold");
   const topOpportunities = opportunities.slice(0, 5);
   const opportunityValue = topOpportunities.reduce((sum, o) => sum + o.projectedGross, 0);
+
+  // Bars are scaled to the largest item in each list, so length ranks the queue
+  // before a single figure is read.
+  const maxStake = Math.max(...actions.map((a) => a.valueOfActing), 1);
+  const maxGross = Math.max(...topOpportunities.map((o) => o.projectedGross), 1);
 
   return (
     <>
@@ -110,8 +117,19 @@ export default async function TodayPage() {
               </div>
             ) : (
               <div className="queue">
+                <div className="queue__header" aria-hidden>
+                  <span />
+                  <span>Vehicle</span>
+                  <span>Recommendation</span>
+                  <span style={{ textAlign: "right" }}>Current price</span>
+                  <span style={{ textAlign: "right" }}>Gain from acting</span>
+                </div>
                 {actions.map((review) => (
-                  <StockQueueRow key={review.item.id} review={review} />
+                  <StockQueueRow
+                    key={review.item.id}
+                    review={review}
+                    maxStake={maxStake}
+                  />
                 ))}
               </div>
             )}
@@ -135,8 +153,19 @@ export default async function TodayPage() {
               </div>
             ) : (
               <div className="queue">
+                <div className="queue__header" aria-hidden>
+                  <span />
+                  <span>Vehicle</span>
+                  <span>Why it qualifies</span>
+                  <span style={{ textAlign: "right" }}>Asking</span>
+                  <span style={{ textAlign: "right" }}>Projected gross</span>
+                </div>
                 {topOpportunities.map((opportunity) => (
-                  <OpportunityQueueRow key={opportunity.listing.id} opportunity={opportunity} />
+                  <OpportunityQueueRow
+                    key={opportunity.listing.id}
+                    opportunity={opportunity}
+                    maxGross={maxGross}
+                  />
                 ))}
               </div>
             )}
@@ -165,27 +194,35 @@ function Metric({
   );
 }
 
-function StockQueueRow({ review }: { review: StockRecommendation }) {
+function StockQueueRow({
+  review,
+  maxStake,
+}: {
+  review: StockRecommendation;
+  maxStake: number;
+}) {
   const copy = ACTION_COPY[review.action];
   const { vehicle } = review.item;
+  const aged = review.daysInStock >= 90;
 
   return (
     <Link href="/stock" className="queue__row">
-      <span className={`queue__mark queue__mark--${copy.tone}`} aria-hidden />
+      <Severity tone={copy.tone as "neg" | "warn" | "pos"} label={copy.label} />
 
       <span className="stack-2">
         <span className="queue__title">
-          {vehicle.make} {vehicle.model} {vehicle.derivative}
+          {vehicle.make} {vehicle.model}
         </span>
         <span className="queue__sub">
-          {formatKm(vehicle.mileageKm)} · {review.daysInStock} days in stock
+          {vehicle.derivative} · {formatKm(vehicle.mileageKm)} ·{" "}
+          <span className={aged ? "t-neg" : undefined}>{review.daysInStock}d in stock</span>
         </span>
       </span>
 
       <span className="stack-2">
         <span className={`pill pill--${copy.tone}`} style={{ alignSelf: "flex-start" }}>
           <span className="pill__dot" aria-hidden />
-          {copy.label} to <Money value={review.recommended.price} showCode={false} />
+          {copy.label}
         </span>
         <span className="queue__sub">
           {(review.grounds.find((g) => g.key !== "aged") ?? review.grounds[0])?.message}
@@ -193,76 +230,91 @@ function StockQueueRow({ review }: { review: StockRecommendation }) {
       </span>
 
       <span className="stack-2 queue__num">
-        <span className="t-strong num">
-          <Money value={review.item.currentAskingPrice} />
+        <span className="pricemove" style={{ justifyContent: "flex-end" }}>
+          <span className="pricemove__from">
+            <Money value={review.item.currentAskingPrice} showCode={false} />
+          </span>
+          <span className="pricemove__arrow" aria-hidden>
+            →
+          </span>
+          <span className="pricemove__to">
+            <Money value={review.recommended.price} showCode={false} />
+          </span>
         </span>
-        <span className="queue__sub">now</span>
+        <span className="queue__sub">
+          {review.action === "exit" ? (
+            <>
+              result <Money value={review.recommended.grossProfit} showCode={false} />
+            </>
+          ) : (
+            <>
+              <Percent value={review.holding.annualisedReturn} /> →{" "}
+              <Percent value={review.recommended.annualisedReturn} />
+            </>
+          )}
+        </span>
       </span>
 
       <span className="stack-2 queue__num">
-        {review.action === "exit" ? (
-          <>
-            <span className="t-strong num t-neg">
-              <Money value={review.recommended.grossProfit} />
-            </span>
-            <span className="queue__sub">result if you exit now</span>
-          </>
-        ) : (
-          <>
-            <span className="t-strong num">
-              <Percent value={review.holding.annualisedReturn} /> →{" "}
-              <Percent value={review.recommended.annualisedReturn} />
-            </span>
-            <span className="queue__sub">return on capital</span>
-          </>
-        )}
+        <span className="queue__stake">
+          <Money value={review.valueOfActing} />
+        </span>
+        <Magnitude value={review.valueOfActing} max={maxStake} tone={copy.tone as "neg" | "warn"} />
       </span>
     </Link>
   );
 }
 
-function OpportunityQueueRow({ opportunity }: { opportunity: Opportunity }) {
+function OpportunityQueueRow({
+  opportunity,
+  maxGross,
+}: {
+  opportunity: Opportunity;
+  maxGross: number;
+}) {
   const { vehicle } = opportunity.listing;
 
   return (
     <Link href="/appraise" className="queue__row">
-      <span className="queue__mark queue__mark--pos" aria-hidden />
+      <Severity tone="pos" label="Worth buying" />
 
       <span className="stack-2">
         <span className="queue__title">
-          {vehicle.make} {vehicle.model} {vehicle.derivative}
+          {vehicle.make} {vehicle.model}
         </span>
         <span className="queue__sub">
-          {formatKm(vehicle.mileageKm)} · {channelLabel(opportunity.listing.sellerType)} ·{" "}
-          {opportunity.listing.region}
+          {vehicle.derivative} · {formatKm(vehicle.mileageKm)} ·{" "}
+          {channelLabel(opportunity.listing.sellerType)} · {opportunity.listing.region}
         </span>
       </span>
 
       <span className="stack-2">
         <span className="pill pill--pos" style={{ alignSelf: "flex-start" }}>
           <span className="pill__dot" aria-hidden />
-          <Money value={opportunity.headroom} showCode={false} /> under your ceiling
+          <Money value={opportunity.headroom} showCode={false} /> under ceiling
         </span>
         <span className="queue__sub">
-          Sells in ~{opportunity.expectedDaysToSale} days at{" "}
+          Sells in ~{opportunity.expectedDaysToSale}d at{" "}
           <Money value={opportunity.expectedRetailPrice} showCode={false} />
         </span>
       </span>
 
       <span className="stack-2 queue__num">
-        <span className="t-strong num">
-          <Money value={opportunity.askingPrice} />
+        <span className="pricemove" style={{ justifyContent: "flex-end" }}>
+          <span className="pricemove__to">
+            <Money value={opportunity.askingPrice} showCode={false} />
+          </span>
         </span>
-        <span className="queue__sub">asking</span>
+        <span className="queue__sub">
+          ceiling <Money value={opportunity.ceiling} showCode={false} />
+        </span>
       </span>
 
       <span className="stack-2 queue__num">
-        <span className="t-strong num">
+        <span className="queue__stake queue__stake--pos">
           <Money value={opportunity.projectedGross} />
         </span>
-        <span className="queue__sub">
-          gross · <Percent value={opportunity.annualisedReturn} />
-        </span>
+        <Magnitude value={opportunity.projectedGross} max={maxGross} tone="pos" />
       </span>
     </Link>
   );

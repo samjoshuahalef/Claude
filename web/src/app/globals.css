@@ -787,10 +787,7 @@ body {
 .chart__marker { stroke: var(--n8); stroke-width: 1; stroke-dasharray: 3 3; }
 .chart__hit { fill: transparent; cursor: pointer; }
 
-/* Sparkline: shape only. The adjacent figure carries the precision. */
-.spark { display: block; }
-.spark__line { fill: none; stroke: var(--n9); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.spark__dot { fill: var(--n9); }
+
 
 /* ==========================================================================
    Queue rows — one decision per row, action revealed on hover
@@ -1095,7 +1092,10 @@ body {
     bottom: 0;
     z-index: 40;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    /* minmax(0, 1fr), not 1fr: a bare 1fr track refuses to shrink below its
+       content's min-width, so the longest label ("Performance") silently pushes
+       the whole bar wider than the viewport. */
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 2px;
     padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
     background: color-mix(in oklab, var(--surface) 92%, transparent);
@@ -1115,6 +1115,11 @@ body {
     font-size: 10.5px;
     font-weight: 500;
     text-decoration: none;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     transition: color var(--t-hover) var(--ease-soft), background-color var(--t-hover) var(--ease-soft);
   }
 
@@ -1273,4 +1278,327 @@ body {
 
   /* Bridge, chart, confidence, evidence: the working, in order, underneath. */
   .workbench__col:last-child > *:not(:first-child) { order: 4; }
+}
+
+/* ==========================================================================
+   Visual encoding
+
+   The eye judges position and length far more accurately than colour or area,
+   and it does both before it reads a word. Everything below exists to move the
+   important quantities onto those two channels, so a dealer can rank a screen
+   at a glance and only read the rows that matter.
+   ========================================================================== */
+
+/* ---- Price ladder ------------------------------------------------------- */
+
+.ladder { margin: 0; }
+.ladder__svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+.ladder__band--pos  { fill: oklch(0.515 0.108 158 / 0.16); }
+.ladder__band--warn { fill: oklch(0.545 0.115 62 / 0.16); }
+.ladder__band--neg  { fill: oklch(0.515 0.158 27 / 0.13); }
+
+.ladder__rule { stroke-linecap: round; }
+.ladder__rule--ceiling { stroke: var(--accent); stroke-width: 2.5; }
+.ladder__rule--walk { stroke: var(--neg); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.ladder__rule--ask { stroke-width: 1.5; }
+.ladder__rule--ask.ladder__rule--pos { stroke: var(--pos); }
+.ladder__rule--ask.ladder__rule--warn { stroke: var(--warn); }
+.ladder__rule--ask.ladder__rule--neg { stroke: var(--neg); }
+
+/* A 2px surface ring keeps the marker legible wherever it lands, including
+   directly on a band edge. */
+.ladder__ask { stroke: var(--surface); stroke-width: 2.5; }
+.ladder__ask--pos { fill: var(--pos); }
+.ladder__ask--warn { fill: var(--warn); }
+.ladder__ask--neg { fill: var(--neg); }
+
+.ladder__retail { fill: var(--n9); stroke: var(--surface); stroke-width: 2; }
+
+.ladder__label { fill: var(--text-3); font-size: 11px; font-weight: 500; text-anchor: middle; }
+.ladder__label--ceiling { fill: var(--accent); }
+
+.ladder__value {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-anchor: middle;
+  font-variant-numeric: tabular-nums;
+}
+
+.ladder__value--pos { fill: var(--pos); }
+.ladder__value--warn { fill: var(--warn); }
+.ladder__value--neg { fill: var(--neg); }
+
+.ladder__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s4);
+  margin: var(--s3) 0 0;
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+
+.ladder__legend-item, .ladder__legend-retail { display: inline-flex; align-items: center; gap: 6px; }
+.ladder__legend-swatch { width: 10px; height: 10px; border-radius: 3px; }
+.ladder__legend-swatch--pos  { background: oklch(0.515 0.108 158 / 0.3); }
+.ladder__legend-swatch--warn { background: oklch(0.545 0.115 62 / 0.3); }
+.ladder__legend-swatch--neg  { background: oklch(0.515 0.158 27 / 0.25); }
+.ladder__legend-diamond { width: 8px; height: 8px; background: var(--n9); transform: rotate(45deg); }
+
+/* ---- Bullet ------------------------------------------------------------- */
+
+.bullet { display: block; width: 100%; min-width: 56px; }
+
+.bullet__track {
+  position: relative;
+  display: block;
+  height: 8px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--n3);
+}
+
+/* One hue, light to dark. Green-amber-red bands would turn every row into a
+   traffic light and drown the one thing that is deliberately coloured. */
+.bullet__band { position: absolute; top: 0; bottom: 0; left: 0; background: var(--n4); }
+.bullet__band--mid { background: var(--n6); }
+.bullet__band--high { background: var(--n8); }
+
+.bullet__marker {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2.5px;
+  margin-left: -1.25px;
+  border-radius: 2px;
+  background: var(--text);
+  box-shadow: 0 0 0 1.5px var(--surface);
+}
+
+.bullet__marker--warn { background: var(--warn); }
+.bullet__marker--neg { background: var(--neg); }
+
+/* ---- Magnitude ---------------------------------------------------------- */
+
+.magnitude {
+  display: block;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--n4);
+  overflow: hidden;
+}
+
+.magnitude__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width var(--t-modal) var(--ease-soft);
+}
+
+.magnitude__fill--accent { background: var(--accent); }
+.magnitude__fill--pos { background: var(--pos); }
+.magnitude__fill--neg { background: var(--neg); }
+.magnitude__fill--warn { background: var(--warn); }
+
+/* ---- Sparkline ---------------------------------------------------------- */
+
+.spark { display: block; overflow: visible; }
+.spark__line { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.spark__line--muted { stroke: var(--n9); }
+.spark__line--pos { stroke: var(--pos); }
+.spark__line--neg { stroke: var(--neg); }
+.spark__dot--muted { fill: var(--n9); }
+.spark__dot--pos { fill: var(--pos); }
+.spark__dot--neg { fill: var(--neg); }
+
+/* ==========================================================================
+   Queue, rebuilt around hierarchy
+
+   Five pieces of information in a row need one dominant element or the eye has
+   nowhere to land. The subject is 14.5px/600, the money at stake 17px, and
+   everything else drops to 11–12px in a muted step. Repeated per-row labels
+   ("now", "return on capital") move up into a header stated once.
+   ========================================================================== */
+
+.queue { --queue-cols: 20px minmax(170px, 1.4fr) minmax(150px, 1.15fr) 124px 148px; }
+
+.queue__header {
+  display: grid;
+  grid-template-columns: var(--queue-cols);
+  gap: var(--s3);
+  padding: var(--s2) var(--s4);
+  border-bottom: 1px solid var(--hairline);
+  background: var(--sunken);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+.queue__row { grid-template-columns: var(--queue-cols); min-height: 56px; }
+
+/* Severity as shape plus colour, never colour alone: a filled triangle for act
+   now, a filled dot for watch, a hollow dot for fine. The list is sorted by
+   money at stake, so vertical position already carries the ranking and a number
+   badge would only restate it in text. */
+.queue__sev {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  color: var(--n8);
+}
+
+.queue__sev--neg { color: var(--neg); }
+.queue__sev--warn { color: var(--warn); }
+.queue__sev--pos { color: var(--pos); }
+
+/* The ladder is 11 / 12.5 / 15 / 20, and the large step sits between the
+   supporting text and the decision number rather than being spread evenly.
+   An even scale is precisely what produces a screen where nothing dominates. */
+.queue__title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
+.queue__sub { font-size: 11.5px; color: var(--text-3); }
+
+.queue__stake {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  /* Proportional figures: tabular gives every digit the width of a zero, which
+     reads loose at display sizes. Tabular is for columns, not for headlines. */
+  color: var(--text);
+}
+
+.queue__stake--neg { color: var(--neg); }
+.queue__stake--pos { color: var(--pos); }
+
+/* A price change reads as one movement, not two unrelated numbers. */
+.pricemove { display: inline-flex; align-items: baseline; gap: 5px; font-variant-numeric: tabular-nums; }
+.pricemove__from { font-size: 12px; color: var(--text-3); text-decoration: line-through; }
+.pricemove__arrow { font-size: 11px; color: var(--text-3); }
+.pricemove__to { font-size: 13.5px; font-weight: 600; color: var(--text); }
+
+@media (max-width: 900px) {
+  .queue__header { display: none; }
+  .queue { --queue-cols: 20px minmax(0, 1fr); }
+  .ladder__legend { gap: var(--s3); font-size: 11px; }
+}
+
+.decision__ladder { padding: var(--s2) var(--s5) var(--s5); }
+
+@media (max-width: 900px) {
+  .decision__ladder { padding: 0 var(--s4) var(--s4); }
+}
+
+/* Column-header micro-axis: the scale for an in-cell bullet is stated once,
+   here, instead of repeated as text in forty rows. */
+.cell-viz { display: flex; flex-direction: column; gap: 5px; min-width: 74px; }
+.cell-viz--end { align-items: flex-end; }
+.cell-viz__num { font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--text); }
+.cell-viz--end .cell-viz__num { text-align: right; }
+
+.th-axis {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s2);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--n8);
+  margin-top: 2px;
+}
+
+.td-age { min-width: 96px; }
+
+@media (max-width: 900px) {
+  .th-axis { display: none; }
+  .cell-viz { min-width: 0; width: 100%; }
+  .queue__stake { font-size: 18px; }
+}
+
+/* ---- Stock triage matrix ------------------------------------------------ */
+
+.matrix { margin: 0; }
+.matrix__svg { width: 100%; height: auto; display: block; }
+
+.matrix__problem { fill: oklch(0.515 0.158 27 / 0.045); }
+.matrix__split { stroke: var(--n7); stroke-width: 1; stroke-dasharray: 3 3; }
+.matrix__zero { stroke: var(--n8); stroke-width: 1; }
+
+/* Every dot carries a surface ring; without it, overlapping cars merge into a
+   single blob and the count is lost. */
+.matrix__dot {
+  fill: var(--n8);
+  fill-opacity: 0.8;
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.matrix__dot--problem { fill: var(--neg); fill-opacity: 0.85; }
+
+.matrix__label { fill: var(--text-2); font-size: 10.5px; font-weight: 500; }
+.matrix__axis { fill: var(--text-3); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.matrix__quadrant { fill: var(--n8); font-size: 11px; font-weight: 500; }
+
+.matrix__caption {
+  margin: var(--s3) 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-3);
+  max-width: 72ch;
+}
+
+@media (max-width: 900px) {
+  /* The age cell reserves width for its bullet on a desktop grid; stacked, the
+     reservation is what pushes the row past the viewport. */
+  .td-age { min-width: 0; }
+  .table td { flex-wrap: wrap; }
+  .cell-viz { flex: 1 1 100%; min-width: 0; }
+  .matrix__svg { min-width: 0; }
+}
+
+@media (max-width: 900px) {
+  /* An over-constrained fixed box still refuses to go below its content's
+     min-width, so the tab bar is pinned to the viewport explicitly and the
+     labels are allowed to truncate rather than push the bar wider than the
+     screen. */
+  /* Flex rather than grid.
+     Grid tracks kept refusing to drop below the widest label's intrinsic width
+     even at minmax(0, 1fr), which pushed the bar past the viewport; flex items
+     shrink by default once min-width is zeroed. Pinned to both edges rather
+     than sized with 100vw, because viewport units include the scrollbar and
+     reintroduce the overflow they were meant to fix. */
+  .tabbar {
+    left: 0;
+    right: 0;
+    width: auto;
+    min-width: 0;
+    display: flex;
+    overflow: hidden;
+  }
+
+  .tabbar__item {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+/* ---- Grounds: explanations, not statuses -------------------------------- */
+
+.grounds { margin: 0; }
+
+.grounds__row {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: var(--s4);
+  padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.grounds__row:last-child { border-bottom: 0; }
+.grounds__subject { font-size: 12.5px; font-weight: 500; color: var(--text); }
+.grounds__reasons { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--text-2); }
+
+@media (max-width: 900px) {
+  .grounds__row { grid-template-columns: 1fr; gap: 4px; }
 }

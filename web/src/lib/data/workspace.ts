@@ -42,6 +42,12 @@ export interface ModelMarketView {
   priceDrift: number | null;
   liveListings: number;
   observedSales: number;
+  /**
+   * Live listing count for each of the last 30 days, derived from when listings
+   * appeared and disappeared. A real series, not a decorative curve — if the
+   * data could not support it the sparkline would not be drawn.
+   */
+  supplySeries: number[];
 }
 
 export interface Workspace {
@@ -89,6 +95,7 @@ export const getWorkspace = cache(async (): Promise<Workspace> => {
         priceDrift: driftOf(retail.comparables),
         liveListings: retail.comparables.filter((c) => c.delistedAt === null).length,
         observedSales: retail.comparables.filter((c) => c.delistedAt !== null).length,
+        supplySeries: supplyOverTime(retail.comparables, AS_OF, 30),
       };
     }),
   );
@@ -115,6 +122,32 @@ export const getWorkspace = cache(async (): Promise<Workspace> => {
     opportunities,
   };
 });
+
+/**
+ * How many listings were live on each of the last `days` days.
+ *
+ * Counted from the listings themselves rather than stored, so the series can
+ * never drift out of agreement with the figure beside it.
+ */
+function supplyOverTime(comparables: Comparable[], asOf: string, days: number): number[] {
+  const end = Date.parse(`${asOf}T00:00:00Z`);
+  const series: number[] = [];
+
+  for (let offset = days - 1; offset >= 0; offset--) {
+    const day = end - offset * 86_400_000;
+    let live = 0;
+    for (const listing of comparables) {
+      const listed = Date.parse(`${listing.listedAt}T00:00:00Z`);
+      const delisted = listing.delistedAt
+        ? Date.parse(`${listing.delistedAt}T00:00:00Z`)
+        : Infinity;
+      if (listed <= day && day < delisted) live++;
+    }
+    series.push(live);
+  }
+
+  return series;
+}
 
 /** Median relative price change across listings that actually moved their price. */
 function driftOf(comparables: Comparable[]): number | null {

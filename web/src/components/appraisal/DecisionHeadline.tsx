@@ -2,13 +2,16 @@
 
 import type { SufficientAppraisal } from "@/lib/engine/types";
 import { formatDays, formatMoney, splitMoney } from "@/lib/format";
+import { PriceLadder } from "@/components/viz/PriceLadder";
 
 /**
  * The verdict.
  *
- * A dealer standing at a desk with a customer waiting should get the answer in
- * one glance and one number. Everything else on the screen is there to be
- * checked afterwards, or not at all.
+ * One hero figure, one sentence, and a ladder that puts every price on a single
+ * axis. The four prices used to be four stat boxes — four numbers to read and
+ * sort in your head. On one axis they become a picture, and the dealer's actual
+ * question ("is their price inside my limit?") stops being arithmetic and
+ * becomes a glance.
  */
 
 export type Verdict = "pos" | "warn" | "neg";
@@ -37,95 +40,78 @@ interface Props {
 
 export function DecisionHeadline({ appraisal, offeredPrice, targetDays }: Props) {
   const verdict = offeredPrice === null ? null : verdictFor(offeredPrice, appraisal);
-  const copy = verdict ? VERDICT_COPY[verdict] : null;
   const { currency, amount } = splitMoney(appraisal.maxBuyPrice, appraisal.currency);
-
-  // The headline states the ceiling, always. When an asking price is on the
-  // table we additionally say how far off it is — the gap is the negotiation.
   const gap = offeredPrice === null ? null : offeredPrice - appraisal.maxBuyPrice;
+  const targetGross = Math.abs(
+    appraisal.bridge.find((line) => line.key === "target_margin")?.amount ?? 0,
+  );
 
   return (
     <section className="decision" aria-label="Buying decision">
-      <div className="decision__inner">
-        <div className="decision__top">
-          <div className="stack-2">
-            <p className="t-label">Maximum purchase price</p>
-            <div className="decision__figure">
-              <span className="cur num">{currency}</span>
-              <span className="t-display num">{amount}</span>
-            </div>
+      <div className="decision__top">
+        <div className="stack-2">
+          <p className="t-label">Maximum purchase price</p>
+          <div className="decision__figure">
+            <span className="cur">{currency}</span>
+            <span className="t-display">{amount}</span>
           </div>
-
-          {verdict && copy && (
-            <span className={`pill pill--${verdict}`}>
-              <span className="pill__dot" aria-hidden />
-              {copy}
-            </span>
-          )}
         </div>
 
-        <p className="t-body decision__caption">
-          {gap === null ? (
-            <>
-              Pay up to this figure and the car returns your target gross profit at an
-              expected retail of{" "}
-              <span className="t-strong num">
-                {formatMoney(appraisal.expectedRetailPrice, appraisal.currency)}
-              </span>{" "}
-              within {formatDays(targetDays)}.
-            </>
-          ) : gap <= 0 ? (
-            <>
-              The asking price leaves{" "}
-              <span className="t-strong num">
-                {formatMoney(Math.abs(gap), appraisal.currency)}
-              </span>{" "}
-              of headroom against your target margin.
-            </>
-          ) : (
-            <>
-              The asking price is{" "}
-              <span className="t-strong num">{formatMoney(gap, appraisal.currency)}</span>{" "}
-              above your ceiling. Negotiate to{" "}
-              <span className="t-strong num">
-                {formatMoney(appraisal.maxBuyPrice, appraisal.currency)}
-              </span>{" "}
-              or walk.
-            </>
-          )}
-        </p>
+        {verdict && (
+          <span className={`pill pill--${verdict}`}>
+            <span className="pill__dot" aria-hidden />
+            {VERDICT_COPY[verdict]}
+          </span>
+        )}
+      </div>
 
-        <div className="decision__stats">
-          <Stat
-            label="Never exceed"
-            value={formatMoney(appraisal.walkAwayPrice, appraisal.currency)}
-            note="Minimum acceptable margin"
-            tone="neg"
-          />
-          <Stat
-            label="Expected retail"
-            value={formatMoney(appraisal.expectedRetailPrice, appraisal.currency)}
-            note={`Sells in ~${formatDays(appraisal.expectedDaysToSale)}`}
-          />
-          <Stat
-            label="Gross profit"
-            value={formatMoney(
-              appraisal.bridge.find((line) => line.key === "target_margin")
-                ? Math.abs(
-                    appraisal.bridge.find((line) => line.key === "target_margin")!.amount,
-                  )
-                : 0,
-              appraisal.currency,
-            )}
-            note="At the ceiling price"
-            tone="pos"
-          />
-          <Stat
-            label="Confidence"
-            value={`${appraisal.confidence.score}`}
-            note={`${appraisal.evidence.sampleSize} comparables`}
-          />
-        </div>
+      <p className="t-body decision__caption">
+        {gap === null ? (
+          <>Pay up to this and the car returns your target gross within {formatDays(targetDays)}.</>
+        ) : gap <= 0 ? (
+          <>
+            Their price leaves{" "}
+            <span className="t-strong num">{formatMoney(Math.abs(gap), appraisal.currency)}</span> of
+            headroom.
+          </>
+        ) : (
+          <>
+            Their price is{" "}
+            <span className="t-strong num">{formatMoney(gap, appraisal.currency)}</span> over your
+            ceiling. Negotiate or walk.
+          </>
+        )}
+      </p>
+
+      <div className="decision__ladder">
+        <PriceLadder
+          maxBuyPrice={appraisal.maxBuyPrice}
+          walkAwayPrice={appraisal.walkAwayPrice}
+          expectedRetailPrice={appraisal.expectedRetailPrice}
+          askingPrice={offeredPrice}
+          currency={appraisal.currency}
+        />
+      </div>
+
+      {/* Three figures, not five. Retail and the walk-away price now live on the
+          ladder, where position says more about them than a number could. */}
+      <div className="decision__stats">
+        <Stat
+          label="Gross profit"
+          value={formatMoney(targetGross, appraisal.currency)}
+          note="At the ceiling price"
+          tone="pos"
+        />
+        <Stat
+          label="Expected to sell in"
+          value={formatDays(appraisal.expectedDaysToSale)}
+          note="At the retail price shown"
+        />
+        <Stat
+          label="Confidence"
+          value={`${appraisal.confidence.score}`}
+          note={`${appraisal.evidence.sampleSize} comparables`}
+        />
       </div>
     </section>
   );

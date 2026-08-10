@@ -1,5 +1,7 @@
 import { getWorkspace } from "@/lib/data/workspace";
 import { Money, Percent } from "@/components/ui/Figure";
+import { Bullet, Magnitude } from "@/components/viz/Bullet";
+import { StockMatrix } from "@/components/viz/StockMatrix";
 import { formatKm } from "@/lib/format";
 import type { StockAction } from "@/lib/engine/stock";
 
@@ -25,6 +27,11 @@ const ACTION: Record<StockAction, { label: string; tone: string }> = {
 
 export default async function StockPage() {
   const { stock, summary } = await getWorkspace();
+
+  // Bars are scaled to the fleet, not to an absolute, so the comparison the
+  // dealer makes is between their own cars.
+  const maxAge = Math.max(...stock.map((r) => r.daysInStock), 120);
+  const maxGain = Math.max(...stock.map((r) => r.valueOfActing), 1);
 
   return (
     <>
@@ -57,6 +64,16 @@ export default async function StockPage() {
           />
         </div>
 
+        <section className="panel">
+          <header className="panel__head">
+            <h2 className="t-h2">Where your capital is sitting</h2>
+            <span className="t-xs">Days in stock against return on capital</span>
+          </header>
+          <div className="panel__body">
+            <StockMatrix stock={stock} />
+          </div>
+        </section>
+
         <div className="panel">
           <div className="table-wrap">
             <table className="table">
@@ -64,7 +81,14 @@ export default async function StockPage() {
                 <tr>
                   <th scope="col">Vehicle</th>
                   <th scope="col">Mileage</th>
-                  <th scope="col" style={{ textAlign: "right" }}>Age</th>
+                  <th scope="col">
+                    Age
+                    <span className="th-axis" aria-hidden>
+                      <span>0</span>
+                      <span>60</span>
+                      <span>90+</span>
+                    </span>
+                  </th>
                   <th scope="col" style={{ textAlign: "right" }}>Paid</th>
                   <th scope="col" style={{ textAlign: "right" }}>Asking</th>
                   <th scope="col" style={{ textAlign: "right" }}>Return now</th>
@@ -83,7 +107,24 @@ export default async function StockPage() {
                         <span className="td-muted">{review.item.vehicle.derivative}</span>
                       </td>
                       <td className="td-num" data-label="Mileage">{formatKm(review.item.vehicle.mileageKm)}</td>
-                      <td className="td-num" data-label="Age">{review.daysInStock}d</td>
+                      <td data-label="Age" className="td-age">
+                        <span className="cell-viz">
+                          <span className="cell-viz__num">{review.daysInStock}d</span>
+                          <Bullet
+                            value={review.daysInStock}
+                            max={maxAge}
+                            thresholds={[60, 90]}
+                            tone={
+                              review.daysInStock >= 90
+                                ? "neg"
+                                : review.daysInStock >= 60
+                                  ? "warn"
+                                  : "calm"
+                            }
+                            label={`${review.daysInStock} days in stock`}
+                          />
+                        </span>
+                      </td>
                       <td className="td-num" data-label="Paid">
                         <Money value={review.item.acquisitionPrice} showCode={false} />
                       </td>
@@ -116,11 +157,20 @@ export default async function StockPage() {
                           <Percent value={review.recommended.annualisedReturn} />
                         )}
                       </td>
-                      <td className="td-num" data-label="Gain from acting">
+                      <td data-label="Gain from acting" className="td-num">
                         {review.valueOfActing === 0 ? (
                           <span className="td-null">—</span>
                         ) : (
-                          <Money value={review.valueOfActing} showCode={false} />
+                          <span className="cell-viz cell-viz--end">
+                            <span className="cell-viz__num t-strong">
+                              <Money value={review.valueOfActing} showCode={false} />
+                            </span>
+                            <Magnitude
+                              value={review.valueOfActing}
+                              max={maxGain}
+                              tone={review.action === "exit" ? "neg" : "warn"}
+                            />
+                          </span>
                         )}
                       </td>
                     </tr>
@@ -133,21 +183,25 @@ export default async function StockPage() {
 
         <section className="stack-3">
           <h2 className="t-h2">Why these calls</h2>
-          <div className="panel panel__body stack-3">
-            {stock
-              .filter((review) => review.action !== "hold")
-              .map((review) => (
-                <div key={review.item.id} className="row wrap" style={{ gap: "var(--s2)" }}>
-                  <span className="t-sm t-strong" style={{ minWidth: 200 }}>
-                    {review.item.vehicle.make} {review.item.vehicle.model}
-                  </span>
-                  {review.grounds.map((ground) => (
-                    <span key={ground.key} className="pill pill--calm">
-                      {ground.message}
-                    </span>
-                  ))}
-                </div>
-              ))}
+          <div className="panel">
+            <dl className="grounds">
+              {stock
+                .filter((review) => review.action !== "hold")
+                .map((review) => (
+                  <div className="grounds__row" key={review.item.id}>
+                    <dt className="grounds__subject">
+                      {review.item.vehicle.make} {review.item.vehicle.model}
+                    </dt>
+                    {/* Sentences, not statuses. Rendering them as pills forced
+                        nowrap on running prose, which overflowed a phone and
+                        spent the pill shape — a shape that should mean "state" —
+                        on an explanation. */}
+                    <dd className="grounds__reasons">
+                      {review.grounds.map((ground) => ground.message).join(" · ")}
+                    </dd>
+                  </div>
+                ))}
+            </dl>
           </div>
         </section>
       </div>
