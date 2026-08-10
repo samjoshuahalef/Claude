@@ -19,6 +19,8 @@ export type FuelType =
   | "hybrid"
   | "plugin_hybrid"
   | "electric"
+  | "cng"
+  | "lpg"
   | "other";
 
 export type Transmission = "manual" | "automatic";
@@ -149,6 +151,12 @@ export type VatTreatment = "notional_deduction" | "input_deduction" | "none";
 export interface AppraisalRequest {
   subject: Vehicle;
   economics: DealerEconomics;
+  /**
+   * Condition and history. Optional, because a first pass at a car on a
+   * forecourt has none of it — but every unanswered question is priced as the
+   * worse case, so the figure improves as the dealer answers.
+   */
+  condition?: import("./condition").VehicleCondition;
   /** Optional override of the dealer's default sale window for this car. */
   targetDaysToSale?: number;
   /** Valuation date. Injected, never `new Date()` inside the engine. */
@@ -191,6 +199,12 @@ export interface SufficientAppraisal {
 
   /** What we expect the car to retail for, at the target sale window. */
   expectedRetailPrice: number;
+  /** Retail before condition and history were applied. */
+  baseRetailPrice: number;
+  /** Signed condition adjustments, each with its reason. */
+  conditionLines: import("./condition").ConditionLine[];
+  /** True when material history questions are still unanswered. */
+  conditionHasUnknowns: boolean;
   /** Retail price as a function of how fast the dealer wants to sell. */
   priceSpeedCurve: PriceSpeedPoint[];
 

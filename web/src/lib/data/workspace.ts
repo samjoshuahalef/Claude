@@ -16,6 +16,8 @@ import { buildComparableSet, marketMedianPrice } from "../engine/comparables";
 import { fitSpeedModel } from "../engine/valuation";
 import type { Comparable, DealerEconomics, Vehicle } from "../engine/types";
 import { SyntheticSwissMarketSource, DEMO_VEHICLES } from "./fixtures";
+import { Catalogue } from "../catalogue/catalogue";
+import { SEED_CATALOGUE } from "../catalogue/seed";
 import { buildStock } from "./stock-fixtures";
 
 /**
@@ -30,6 +32,8 @@ export const AS_OF = "2026-08-10";
 
 export interface ModelMarketView {
   key: string;
+  /** Catalogue model this market covers. The join key for everything. */
+  modelId: string;
   label: string;
   vehicle: Vehicle;
   comparables: Comparable[];
@@ -52,6 +56,8 @@ export interface ModelMarketView {
 
 export interface Workspace {
   asOf: string;
+  /** Serialisable catalogue, handed to client components that need pickers. */
+  catalogue: typeof SEED_CATALOGUE;
   economics: DealerEconomics;
   markets: ModelMarketView[];
   stock: StockRecommendation[];
@@ -66,6 +72,7 @@ export interface Workspace {
 export const getWorkspace = cache(async (): Promise<Workspace> => {
   const source = new SyntheticSwissMarketSource();
   const economics = DEFAULT_ECONOMICS;
+  const catalogue = new Catalogue(SEED_CATALOGUE);
 
   const markets: ModelMarketView[] = await Promise.all(
     DEMO_VEHICLES.map(async ({ label, vehicle }) => {
@@ -83,8 +90,12 @@ export const getWorkspace = cache(async (): Promise<Workspace> => {
       const medianPrice = marketMedianPrice(used);
       const speed = fitSpeedModel(used, medianPrice);
 
+      const make = catalogue.findMake(vehicle.make);
+      const model = make ? catalogue.findModel(make.id, vehicle.model) : undefined;
+
       return {
         key: `${vehicle.make}|${vehicle.model}`,
+        modelId: model?.id ?? "",
         label,
         vehicle,
         comparables: retail.comparables,
@@ -115,6 +126,7 @@ export const getWorkspace = cache(async (): Promise<Workspace> => {
 
   return {
     asOf: AS_OF,
+    catalogue: SEED_CATALOGUE,
     economics,
     markets,
     stock,

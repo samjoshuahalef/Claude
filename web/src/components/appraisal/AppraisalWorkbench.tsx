@@ -5,8 +5,12 @@ import { appraise } from "@/lib/engine/appraise";
 import { ECONOMICS_PRESETS } from "@/lib/engine/defaults";
 import { francs, toFrancs } from "@/lib/engine/money";
 import type { Comparable, DealerEconomics, Vehicle } from "@/lib/engine/types";
-import { formatAge, formatMoney } from "@/lib/format";
+import { formatAge, formatMoney, formatSignedMoney } from "@/lib/format";
 import { monthsBetween } from "@/lib/engine/stats";
+import { VehiclePicker, type VehicleSelection } from "./VehiclePicker";
+import { ConditionPanel } from "./ConditionPanel";
+import { Catalogue, type CatalogueData } from "@/lib/catalogue/catalogue";
+import { DEFAULT_CONDITION, type VehicleCondition } from "@/lib/engine/condition";
 import { DecisionHeadline } from "./DecisionHeadline";
 import { BridgeWaterfall } from "./BridgeWaterfall";
 import { PriceSpeedChart } from "./PriceSpeedChart";
@@ -24,6 +28,8 @@ import { EvidenceTable } from "./EvidenceTable";
 
 export interface MarketBundle {
   label: string;
+  /** Catalogue model this market covers, so a picked variant finds its market. */
+  modelId: string;
   vehicle: Vehicle;
   comparables: Comparable[];
   supplyChange?: { current: number; previous: number };
@@ -31,18 +37,36 @@ export interface MarketBundle {
 
 interface Props {
   bundles: MarketBundle[];
+  catalogue: CatalogueData;
   asOf: string;
 }
 
-export function AppraisalWorkbench({ bundles, asOf }: Props) {
-  const [bundleIndex, setBundleIndex] = useState(0);
+export function AppraisalWorkbench({ bundles, catalogue: catalogueData, asOf }: Props) {
+  const catalogue = useMemo(() => new Catalogue(catalogueData), [catalogueData]);
+
   const [presetId, setPresetId] = useState("standard");
   const [targetDays, setTargetDays] = useState(45);
   const [offeredFrancs, setOfferedFrancs] = useState("");
+  const [condition, setCondition] = useState<VehicleCondition>(DEFAULT_CONDITION);
 
-  const bundle = bundles[bundleIndex];
-  const [mileageKm, setMileageKm] = useState(bundle.vehicle.mileageKm);
-  const [registration, setRegistration] = useState(bundle.vehicle.firstRegistration);
+  const [selection, setSelection] = useState<VehicleSelection>(() => {
+    const make = catalogueData.makes[0];
+    const model = catalogueData.models.find((m) => m.makeId === make.id)!;
+    const generation = catalogueData.generations.find((g) => g.modelId === model.id)!;
+    const variant = catalogueData.variants.find((v) => v.generationId === generation.id)!;
+    return { makeId: make.id, modelId: model.id, generationId: generation.id, variantId: variant.id };
+  });
+
+  const indexed = catalogue.get(selection.variantId);
+
+  // The market for the chosen model. Comparables follow the catalogue selection
+  // rather than a separate dropdown, so the two can never disagree about which
+  // car is being priced.
+  const bundle =
+    bundles.find((item) => item.modelId === selection.modelId) ?? bundles[0];
+
+  const [mileageKm, setMileageKm] = useState(62_000);
+  const [registration, setRegistration] = useState("2022-04");
 
   const preset = ECONOMICS_PRESETS.find((p) => p.id === presetId) ?? ECONOMICS_PRESETS[1];
   const [targetGross, setTargetGross] = useState(toFrancs(preset.economics.targetGrossProfit));
@@ -60,28 +84,39 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
     [preset, targetGross, targetDays],
   );
 
-  const subject: Vehicle = useMemo(
-    () => ({ ...bundle.vehicle, mileageKm, firstRegistration: registration }),
-    [bundle.vehicle, mileageKm, registration],
-  );
+  /**
+   * The subject is built from the catalogue variant, not from free text. Fuel,
+   * transmission, drivetrain and power come from the chosen version, so they
+   * can never contradict it — which is exactly how comparable sets get quietly
+   * contaminated when the specification is typed by hand.
+   */
+  const subject: Vehicle = useMemo(() => {
+    if (!indexed) return { ...bundle.vehicle, mileageKm, firstRegistration: registration };
+    return {
+      make: indexed.make.name,
+      model: indexed.model.name,
+      derivative: indexed.variant.name,
+      firstRegistration: registration,
+      mileageKm,
+      fuel: indexed.variant.fuel as Vehicle["fuel"],
+      transmission: indexed.variant.transmission,
+      drivetrain: indexed.variant.drivetrain,
+      powerKw: indexed.variant.powerKw,
+      options: bundle.vehicle.options,
+    };
+  }, [indexed, bundle.vehicle, mileageKm, registration]);
 
   const result = useMemo(
     () =>
       appraise(
-        { subject, economics, asOf, targetDaysToSale: targetDays },
+        { subject, economics, asOf, targetDaysToSale: targetDays, condition },
         bundle.comparables,
         { supplyChange: bundle.supplyChange },
       ),
-    [subject, economics, asOf, targetDays, bundle],
+    [subject, economics, asOf, targetDays, bundle, condition],
   );
 
   const offeredPrice = offeredFrancs.trim() === "" ? null : francs(Number(offeredFrancs) || 0);
-
-  function selectBundle(index: number) {
-    setBundleIndex(index);
-    setMileageKm(bundles[index].vehicle.mileageKm);
-    setRegistration(bundles[index].vehicle.firstRegistration);
-  }
 
   function selectPreset(id: string) {
     setPresetId(id);
@@ -103,20 +138,7 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
             </span>
           </header>
           <div className="panel__body stack-4">
-            <label className="field">
-              <span className="field__label">Model</span>
-              <select
-                className="select"
-                value={bundleIndex}
-                onChange={(event) => selectBundle(Number(event.target.value))}
-              >
-                {bundles.map((item, index) => (
-                  <option key={item.label} value={index}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <VehiclePicker data={catalogueData} value={selection} onChange={setSelection} />
 
             <div className="field-row">
               <label className="field">
@@ -153,6 +175,16 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
                 onChange={(event) => setOfferedFrancs(event.target.value)}
               />
             </label>
+          </div>
+        </section>
+
+        <section className="panel wb-condition">
+          <header className="panel__head">
+            <h2 className="t-h2">Condition and history</h2>
+            <span className="t-xs">Biggest effect first</span>
+          </header>
+          <div className="panel__body">
+            <ConditionPanel value={condition} onChange={setCondition} />
           </div>
         </section>
 
@@ -261,6 +293,41 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
                 <BridgeWaterfall bridge={result.bridge} currency={result.currency} />
               </div>
             </section>
+
+            {result.conditionLines.length > 0 && (
+              <section className="panel">
+                <header className="panel__head">
+                  <h2 className="t-h2">What this car's history costs</h2>
+                  <span className="t-xs num">
+                    {formatMoney(result.baseRetailPrice)} → {formatMoney(result.expectedRetailPrice)}
+                  </span>
+                </header>
+                <div className="panel__body stack-2">
+                  {result.conditionLines.map((line) => (
+                    <div className="row row--between" key={line.key}>
+                      <span className="t-sm">{line.label}</span>
+                      <span className="row" style={{ gap: "var(--s3)" }}>
+                        <span className="t-xs num">
+                          {(line.fraction * 100).toFixed(1)}%
+                        </span>
+                        <span
+                          className={`t-sm num t-strong ${line.amount < 0 ? "t-neg" : "t-pos"}`}
+                          style={{ minWidth: 92, textAlign: "right" }}
+                        >
+                          {formatSignedMoney(line.amount)}
+                        </span>
+                      </span>
+                    </div>
+                  ))}
+                  {result.conditionHasUnknowns && (
+                    <p className="t-xs" style={{ marginTop: "var(--s2)" }}>
+                      Unanswered questions are priced as the worse case, because that is how the
+                      buyer will price them. Confirming them moves the ceiling up.
+                    </p>
+                  )}
+                </div>
+              </section>
+            )}
 
             <section className="panel">
               <header className="panel__head">

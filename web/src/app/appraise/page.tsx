@@ -10,7 +10,7 @@ import { getWorkspace } from "@/lib/data/workspace";
  * spinner. That immediacy is what makes it usable with a customer waiting.
  */
 export default async function AppraisePage() {
-  const { markets, asOf } = await getWorkspace();
+  const { markets, catalogue, asOf } = await getWorkspace();
 
   return (
     <>
@@ -27,8 +27,10 @@ export default async function AppraisePage() {
 
       <div className="page">
         <AppraisalWorkbench
+          catalogue={catalogue}
           bundles={markets.map((market) => ({
             label: market.label,
+            modelId: market.modelId,
             vehicle: market.vehicle,
             comparables: market.comparables,
             supplyChange: market.supplyChange,

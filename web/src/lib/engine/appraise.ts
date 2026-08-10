@@ -26,6 +26,7 @@ import { grossProfitAt, solveCeiling } from "./ceiling";
 import { assessConfidence, insufficiencyReasons, remediesFor } from "./confidence";
 import { assessRisks } from "./risks";
 import { roundToAskingPrice } from "./money";
+import { assessCondition } from "./condition";
 import { median } from "./stats";
 
 export interface AppraiseOptions {
@@ -60,9 +61,20 @@ export function appraise(
   // Retail is the price that clears within the dealer's own sale window, not a
   // generic "market value". A dealer targeting 30 days and one targeting 90
   // should not be handed the same figure.
-  const expectedRetailPrice = roundToAskingPrice(
+  const baseRetailPrice = roundToAskingPrice(
     priceForTargetDays(targetDays, marketMedian, speed),
   );
+
+  /**
+   * Condition adjusts the comparable-derived price, not the other way round.
+   * The comparables describe an average car of this specification; this car is
+   * a specific one, and its history is what separates the two.
+   */
+  const condition = request.condition
+    ? assessCondition(baseRetailPrice, request.condition)
+    : { lines: [], total: 0, adjustedRetail: baseRetailPrice, hasUnknowns: false };
+
+  const expectedRetailPrice = roundToAskingPrice(condition.adjustedRetail);
   const expectedDaysToSale = expectedDaysAt(expectedRetailPrice, marketMedian, speed);
 
   const target = solveCeiling({
@@ -89,6 +101,9 @@ export function appraise(
     maxBuyPrice: target.maxBuyPrice,
     walkAwayPrice: walkAway.maxBuyPrice,
     expectedRetailPrice,
+    baseRetailPrice,
+    conditionLines: condition.lines,
+    conditionHasUnknowns: condition.hasUnknowns,
     expectedDaysToSale,
     priceSpeedCurve: buildPriceSpeedCurve({
       marketMedian,

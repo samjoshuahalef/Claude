@@ -22,6 +22,7 @@ import type {
   Vehicle,
 } from "../engine/types";
 import { francs } from "../engine/money";
+import { SEED_CATALOGUE } from "../catalogue/seed";
 import type {
   ComparableQuery,
   ComparableResponse,
@@ -61,6 +62,10 @@ function hash(text: string): number {
 interface ModelMarket {
   make: string;
   model: string;
+  /** Catalogue model, so the synthetic market spans the real variant list. */
+  modelId: string;
+  /** The variant the reference price describes; others scale off its list price. */
+  referenceVariantId: string;
   derivative: string;
   fuel: FuelType;
   powerKw: number;
@@ -87,6 +92,8 @@ const MARKETS: ModelMarket[] = [
   {
     make: "BMW",
     model: "X3",
+    modelId: "bmw-x3",
+    referenceVariantId: "bmw-x3-g01-m40i",
     derivative: "M40i xDrive",
     fuel: "petrol",
     powerKw: 265,
@@ -105,6 +112,8 @@ const MARKETS: ModelMarket[] = [
   {
     make: "Audi",
     model: "Q5",
+    modelId: "audi-q5",
+    referenceVariantId: "audi-q5-fy-45tfsi",
     derivative: "45 TFSI quattro S line",
     fuel: "petrol",
     powerKw: 195,
@@ -123,6 +132,8 @@ const MARKETS: ModelMarket[] = [
   {
     make: "Mercedes-Benz",
     model: "GLC",
+    modelId: "mb-glc",
+    referenceVariantId: "mb-glc-x253-300de",
     derivative: "300 de 4MATIC",
     fuel: "plugin_hybrid",
     powerKw: 225,
@@ -141,6 +152,8 @@ const MARKETS: ModelMarket[] = [
   {
     make: "Volkswagen",
     model: "Golf",
+    modelId: "vw-golf",
+    referenceVariantId: "vw-golf-mk8-gti",
     derivative: "2.0 TSI GTI",
     fuel: "petrol",
     powerKw: 180,
@@ -159,6 +172,8 @@ const MARKETS: ModelMarket[] = [
   {
     make: "Skoda",
     model: "Octavia",
+    modelId: "skoda-octavia",
+    referenceVariantId: "skoda-octavia-mk4-rs-tdi",
     derivative: "2.0 TDI RS 4x4",
     fuel: "diesel",
     powerKw: 147,
@@ -262,10 +277,38 @@ function findMarket(subject: Vehicle): ModelMarket | undefined {
 function generateListings(market: ModelMarket, asOf: IsoDate): Comparable[] {
   const rng = seeded(hash(`${market.make}|${market.model}|${asOf}`));
   const listings: Comparable[] = [];
-  const total = market.liveListings + market.soldListings;
+
+  /**
+   * A real market carries every version of a model, not one.
+   *
+   * Generating only the reference variant made the market look plausible while
+   * quietly guaranteeing that any other version the dealer picked had no
+   * comparables at all — the engine would correctly refuse, and the refusal
+   * would look like a bug rather than the fixture's fault.
+   */
+  const catalogueVariants = SEED_CATALOGUE.variants.filter((variant) =>
+    SEED_CATALOGUE.generations.some(
+      (generation) => generation.id === variant.generationId && generation.modelId === market.modelId,
+    ),
+  );
+  const reference =
+    catalogueVariants.find((variant) => variant.id === market.referenceVariantId) ??
+    catalogueVariants[0];
+
+  const perVariant = 11;
+  const total = catalogueVariants.length * perVariant;
+  const liveShare = market.liveListings / (market.liveListings + market.soldListings);
 
   for (let i = 0; i < total; i++) {
-    const sold = i >= market.liveListings;
+    const variant = catalogueVariants[i % catalogueVariants.length];
+    const sold = i % perVariant >= Math.round(perVariant * liveShare);
+
+    // Price scales with the variant's list price when new, which is what
+    // separates a 20d from an M40i in the used market too.
+    const variantFactor =
+      reference?.listPriceNew && variant.listPriceNew
+        ? variant.listPriceNew / reference.listPriceNew
+        : 1;
 
     const ageMonths = Math.round(market.referenceAgeMonths + gaussian(rng) * 9);
     const mileageKm = Math.max(
@@ -274,7 +317,7 @@ function generateListings(market: ModelMarket, asOf: IsoDate): Comparable[] {
     );
 
     const fairPrice =
-      market.referencePrice +
+      market.referencePrice * variantFactor +
       (market.perThousandKm * (mileageKm - market.referenceMileageKm)) / 1000 +
       market.perMonthAge * (ageMonths - market.referenceAgeMonths);
 
@@ -304,13 +347,13 @@ function generateListings(market: ModelMarket, asOf: IsoDate): Comparable[] {
       vehicle: {
         make: market.make,
         model: market.model,
-        derivative: market.derivative,
+        derivative: variant.name,
         firstRegistration: monthsBefore(asOf, ageMonths),
         mileageKm,
-        fuel: market.fuel,
-        transmission: "automatic",
-        drivetrain: "awd",
-        powerKw: market.powerKw + Math.round(gaussian(rng) * 4),
+        fuel: variant.fuel,
+        transmission: variant.transmission,
+        drivetrain: variant.drivetrain,
+        powerKw: variant.powerKw + Math.round(gaussian(rng) * 2),
         options: pickOptions(rng),
       },
       askingPrice,
