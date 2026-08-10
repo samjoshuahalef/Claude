@@ -11,22 +11,22 @@ import { formatDays, formatMoney, splitMoney } from "@/lib/format";
  * checked afterwards, or not at all.
  */
 
-export type Verdict = "go" | "caution" | "stop";
+export type Verdict = "pos" | "warn" | "neg";
 
 export function verdictFor(
   offeredPrice: number | null,
   appraisal: SufficientAppraisal,
 ): Verdict {
-  if (offeredPrice === null) return "go";
-  if (offeredPrice <= appraisal.maxBuyPrice) return "go";
-  if (offeredPrice <= appraisal.walkAwayPrice) return "caution";
-  return "stop";
+  if (offeredPrice === null) return "pos";
+  if (offeredPrice <= appraisal.maxBuyPrice) return "pos";
+  if (offeredPrice <= appraisal.walkAwayPrice) return "warn";
+  return "neg";
 }
 
-const VERDICT_COPY: Record<Verdict, { label: string; glow: string }> = {
-  go: { label: "Within your limit", glow: "var(--af-go-soft)" },
-  caution: { label: "Above target margin", glow: "var(--af-caution-soft)" },
-  stop: { label: "Do not buy", glow: "var(--af-stop-soft)" },
+const VERDICT_COPY: Record<Verdict, string> = {
+  pos: "Within your limit",
+  warn: "Above target margin",
+  neg: "Do not buy",
 };
 
 interface Props {
@@ -45,35 +45,31 @@ export function DecisionHeadline({ appraisal, offeredPrice, targetDays }: Props)
   const gap = offeredPrice === null ? null : offeredPrice - appraisal.maxBuyPrice;
 
   return (
-    <section
-      className="af-decision"
-      style={{ ["--af-verdict-glow" as string]: copy?.glow ?? "var(--af-accent-soft)" }}
-      aria-label="Buying decision"
-    >
-      <div className="af-decision__inner">
-        <div className="af-decision__top">
-          <div className="af-stack-2">
-            <p className="af-eyebrow">Maximum purchase price</p>
-            <div className="af-decision__headline">
-              <span className="af-decision__currency af-num">{currency}</span>
-              <span className="af-display af-decision__amount">{amount}</span>
+    <section className="decision" aria-label="Buying decision">
+      <div className="decision__inner">
+        <div className="decision__top">
+          <div className="stack-2">
+            <p className="t-label">Maximum purchase price</p>
+            <div className="decision__figure">
+              <span className="cur num">{currency}</span>
+              <span className="t-display num">{amount}</span>
             </div>
           </div>
 
           {verdict && copy && (
-            <span className={`af-verdict af-verdict--${verdict}`}>
-              <span className="af-verdict__dot" aria-hidden />
-              {copy.label}
+            <span className={`pill pill--${verdict}`}>
+              <span className="pill__dot" aria-hidden />
+              {copy}
             </span>
           )}
         </div>
 
-        <p className="af-body af-decision__caption">
+        <p className="t-body decision__caption">
           {gap === null ? (
             <>
               Pay up to this figure and the car returns your target gross profit at an
               expected retail of{" "}
-              <span className="af-strong af-num">
+              <span className="t-strong num">
                 {formatMoney(appraisal.expectedRetailPrice, appraisal.currency)}
               </span>{" "}
               within {formatDays(targetDays)}.
@@ -81,7 +77,7 @@ export function DecisionHeadline({ appraisal, offeredPrice, targetDays }: Props)
           ) : gap <= 0 ? (
             <>
               The asking price leaves{" "}
-              <span className="af-strong af-num">
+              <span className="t-strong num">
                 {formatMoney(Math.abs(gap), appraisal.currency)}
               </span>{" "}
               of headroom against your target margin.
@@ -89,9 +85,9 @@ export function DecisionHeadline({ appraisal, offeredPrice, targetDays }: Props)
           ) : (
             <>
               The asking price is{" "}
-              <span className="af-strong af-num">{formatMoney(gap, appraisal.currency)}</span>{" "}
+              <span className="t-strong num">{formatMoney(gap, appraisal.currency)}</span>{" "}
               above your ceiling. Negotiate to{" "}
-              <span className="af-strong af-num">
+              <span className="t-strong num">
                 {formatMoney(appraisal.maxBuyPrice, appraisal.currency)}
               </span>{" "}
               or walk.
@@ -99,12 +95,12 @@ export function DecisionHeadline({ appraisal, offeredPrice, targetDays }: Props)
           )}
         </p>
 
-        <div className="af-decision__stats">
+        <div className="decision__stats">
           <Stat
             label="Never exceed"
             value={formatMoney(appraisal.walkAwayPrice, appraisal.currency)}
             note="Minimum acceptable margin"
-            tone="stop"
+            tone="neg"
           />
           <Stat
             label="Expected retail"
@@ -122,7 +118,7 @@ export function DecisionHeadline({ appraisal, offeredPrice, targetDays }: Props)
               appraisal.currency,
             )}
             note="At the ceiling price"
-            tone="go"
+            tone="pos"
           />
           <Stat
             label="Confidence"
@@ -144,13 +140,13 @@ function Stat({
   label: string;
   value: string;
   note: string;
-  tone?: "go" | "stop";
+  tone?: "pos" | "neg";
 }) {
   return (
-    <div className={`af-stat${tone ? ` af-stat--${tone}` : ""}`}>
-      <span className="af-stat__k">{label}</span>
-      <span className="af-stat__v af-num">{value}</span>
-      <span className="af-stat__note">{note}</span>
+    <div className={`decision__stat${tone ? ` decision__stat--${tone}` : ""}`}>
+      <span className="decision__stat-k">{label}</span>
+      <span className="decision__stat-v num">{value}</span>
+      <span className="decision__stat-n">{note}</span>
     </div>
   );
 }

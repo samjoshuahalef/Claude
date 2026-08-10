@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "verify": "tsc scripts/verify-engine.ts --outDir .verify --module commonjs --moduleResolution node --target es2022 --skipLibCheck --esModuleInterop && node .verify/scripts/verify-engine.js"
+    "verify": "tsc scripts/verify-engine.ts scripts/verify-decisions.ts --outDir .verify --module commonjs --moduleResolution node --target es2022 --skipLibCheck --esModuleInterop && node .verify/scripts/verify-engine.js && node .verify/scripts/verify-decisions.js"
   },
   "dependencies": {
     "next": "16.3.0",

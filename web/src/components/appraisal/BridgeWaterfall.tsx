@@ -45,7 +45,7 @@ export function BridgeWaterfall({ bridge, currency }: Props) {
   const position = (value: number) => ((value - axisMin) / (max - axisMin)) * 100;
 
   return (
-    <div className="af-bridge" role="table" aria-label="Retail to ceiling bridge">
+    <div className="bridge" role="table" aria-label="Retail to ceiling bridge">
       {bridge.map((line) => {
         const isTotal = line.key === "max_buy" || line.key === "expected_retail";
         const previous = line.runningTotal - line.amount;
@@ -62,21 +62,21 @@ export function BridgeWaterfall({ bridge, currency }: Props) {
         return (
           <div
             key={line.key}
-            className={`af-bridgeRow${line.key === "max_buy" ? " af-bridgeRow--total" : ""}`}
+            className={`bridge__row${line.key === "max_buy" ? " bridge__row--total" : ""}`}
             role="row"
           >
-            <span className="af-bridgeRow__label" role="cell">
+            <span className="bridge__label" role="cell">
               {line.label}
             </span>
 
-            <span className="af-bridgeRow__track" role="cell" aria-hidden>
+            <span className="bridge__track" role="cell" aria-hidden>
               <span
-                className={`af-bridgeRow__bar af-bridgeRow__bar--${BAR_TONE[line.key] ?? "cost"}`}
+                className={`bridge__bar bridge__bar--${BAR_TONE[line.key] ?? "cost"}`}
                 style={{ left: `${left}%`, width: `${width}%` }}
               />
             </span>
 
-            <span className="af-bridgeRow__value af-num" role="cell">
+            <span className="bridge__value num" role="cell">
               {isTotal
                 ? formatMoney(line.runningTotal, currency)
                 : formatSignedMoney(line.amount, currency)}

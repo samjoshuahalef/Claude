@@ -203,6 +203,26 @@ export class SyntheticSwissMarketSource implements MarketDataSource {
     return market === "CH";
   }
 
+  /**
+   * Auction lots and trade offers.
+   *
+   * Priced around trade money rather than retail — roughly 78-84% of retail,
+   * which is where a dealer can actually buy. Generated from the same underlying
+   * fair price as the retail market so the gap between the two is the real
+   * economic quantity sourcing is trying to measure, not an artefact.
+   */
+  async fetchAcquisitionCandidates(query: ComparableQuery): Promise<ComparableResponse> {
+    const market = findMarket(query.subject);
+    if (!market) {
+      return { comparables: [], provenance: this.provenance, retrievedAt: query.asOf };
+    }
+    return {
+      comparables: generateAcquisitionLots(market, query.asOf),
+      provenance: this.provenance,
+      retrievedAt: query.asOf,
+    };
+  }
+
   async fetchComparables(query: ComparableQuery): Promise<ComparableResponse> {
     const market = findMarket(query.subject);
     if (!market) {
@@ -356,6 +376,72 @@ function daysBetweenDates(from: IsoDate, to: IsoDate): number {
   return Math.round(
     (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000,
   );
+}
+
+/** Trade money as a fraction of retail, by channel. */
+const CHANNEL_LEVEL: Record<"auction" | "trade" | "private", number> = {
+  auction: 0.785,
+  trade: 0.825,
+  private: 0.895,
+};
+
+/**
+ * Cars offered on acquisition channels.
+ *
+ * Deliberately spread across the buying ceiling: some clear it comfortably, most
+ * do not. A sourcing screen that surfaces every lot as a bargain is worthless —
+ * the discipline of the feature is in what it rejects.
+ */
+function generateAcquisitionLots(market: ModelMarket, asOf: IsoDate): Comparable[] {
+  const rng = seeded(hash(`acq|${market.make}|${market.model}|${asOf}`));
+  const lots: Comparable[] = [];
+  const channels: Array<"auction" | "trade" | "private"> = ["auction", "trade", "private"];
+  const count = 14;
+
+  for (let i = 0; i < count; i++) {
+    const channel = channels[i % channels.length];
+    const ageMonths = Math.round(market.referenceAgeMonths + gaussian(rng) * 10);
+    const mileageKm = Math.max(
+      8_000,
+      Math.round((market.referenceMileageKm + gaussian(rng) * 21_000) / 500) * 500,
+    );
+
+    const fairRetail =
+      market.referencePrice +
+      (market.perThousandKm * (mileageKm - market.referenceMileageKm)) / 1000 +
+      market.perMonthAge * (ageMonths - market.referenceAgeMonths);
+
+    const level = CHANNEL_LEVEL[channel] * (1 + gaussian(rng) * 0.055);
+    const askingPrice = Math.round((fairRetail * level) / francs(100)) * francs(100);
+    const listedAt = shiftDate(asOf, -Math.floor(rng() * 21));
+
+    lots.push({
+      id: `acq-${market.make}-${market.model}-${i}`.toLowerCase(),
+      vehicle: {
+        make: market.make,
+        model: market.model,
+        derivative: market.derivative,
+        firstRegistration: monthsBefore(asOf, ageMonths),
+        mileageKm,
+        fuel: market.fuel,
+        transmission: "automatic",
+        drivetrain: "awd",
+        powerKw: market.powerKw + Math.round(gaussian(rng) * 4),
+        options: pickOptions(rng),
+      },
+      askingPrice,
+      currency: "CHF",
+      market: "CH",
+      sellerType: channel,
+      region: REGIONS[Math.floor(rng() * REGIONS.length)],
+      listedAt,
+      delistedAt: null,
+      priceHistory: [{ at: listedAt, price: askingPrice }],
+      soldSignal: "unsold",
+    });
+  }
+
+  return lots;
 }
 
 /** The vehicles the demo can appraise, exposed so the UI is never out of sync. */

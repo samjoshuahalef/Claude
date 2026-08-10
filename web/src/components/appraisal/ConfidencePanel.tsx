@@ -15,30 +15,41 @@ interface Props {
   risks: RiskFlag[];
 }
 
-const BAND_LABEL: Record<Confidence["band"], string> = {
-  high: "High",
-  moderate: "Moderate",
-  low: "Low",
+const BAND: Record<Confidence["band"], { label: string; tone: string }> = {
+  high: { label: "High confidence", tone: "pos" },
+  moderate: { label: "Moderate confidence", tone: "warn" },
+  low: { label: "Low confidence", tone: "neg" },
+};
+
+const SEVERITY_TONE: Record<RiskFlag["severity"], string> = {
+  info: "calm",
+  warning: "warn",
+  critical: "neg",
 };
 
 export function ConfidencePanel({ confidence, risks }: Props) {
+  const band = BAND[confidence.band];
+
   return (
-    <div className={`af-conf af-conf--${confidence.band}`}>
-      <div className="af-conf__head">
-        <span className="af-conf__score af-num">{confidence.score}</span>
-        <span className="af-conf__band">{BAND_LABEL[confidence.band]} confidence</span>
+    <div className="stack-4">
+      <div className="row row--between row--baseline">
+        <span className="metric__value metric__value--sm num">{confidence.score}</span>
+        <span className={`pill pill--${band.tone}`}>
+          <span className="pill__dot" aria-hidden />
+          {band.label}
+        </span>
       </div>
 
-      <div>
+      <div className="stack-3">
         {confidence.drivers.map((driver) => (
-          <div className="af-driver" key={driver.key}>
-            <div className="af-stack-2">
-              <span className="af-driver__label">{driver.label}</span>
-              <span className="af-driver__detail">{driver.detail}</span>
+          <div className="driver" key={driver.key}>
+            <div className="stack-2">
+              <span className="t-sm t-strong">{driver.label}</span>
+              <span className="t-xs">{driver.detail}</span>
             </div>
-            <span className="af-driver__track">
+            <span className="meter">
               <span
-                className="af-driver__fill"
+                className={`meter__fill meter__fill--${band.tone}`}
                 style={{ width: `${Math.round(driver.score * 100)}%` }}
               />
             </span>
@@ -48,13 +59,16 @@ export function ConfidencePanel({ confidence, risks }: Props) {
 
       {risks.length > 0 && (
         <>
-          <hr className="af-divider" />
-          <div className="af-stack-3">
-            <p className="af-eyebrow">Risk flags</p>
-            <div className="af-risks">
+          <hr className="divider" />
+          <div className="stack-3">
+            <p className="t-label">Risk flags</p>
+            <div className="row wrap" style={{ gap: "var(--s2)" }}>
               {risks.map((risk, index) => (
-                <span className={`af-risk af-risk--${risk.severity}`} key={`${risk.key}-${index}`}>
-                  <span className="af-risk__dot" aria-hidden />
+                <span
+                  className={`pill pill--${SEVERITY_TONE[risk.severity]}`}
+                  key={`${risk.key}-${index}`}
+                >
+                  <span className="pill__dot" aria-hidden />
                   {risk.message}
                 </span>
               ))}

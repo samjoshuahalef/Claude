@@ -1,1188 +1,967 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   AutoFlair design tokens
+   Autoflair design system — light only.
 
-   Two rules govern everything below.
+   Five rules, and everything else follows from them:
 
-   1. Numbers are the interface. Every figure uses tabular numerals so columns
-      align and a price does not reflow as it animates. This is the single
-      detail that separates financial software from a template.
-   2. Colour carries meaning, never decoration. Green is money made, red is
-      money at risk, amber is uncertainty. Nothing is coloured to look nice.
+   1. Depth comes from a 1px border and a surface step, not from shadows.
+      Shadows are reserved for things genuinely floating over content.
+   2. The canvas is not white. White is reserved for raised surfaces, which is
+      what gives the interface anywhere to go.
+   3. One accent colour. It appears on the primary action, the active nav item,
+      the focus ring, the selected row, and the primary chart series. Nowhere
+      else — not on icons, not on headings.
+   4. Colour is functional. Green is money made, red is money at risk, amber is
+      uncertainty. An absolute balance is never coloured; only changes are.
+   5. Three weights: 400, 500, 600. Hierarchy comes from size and colour step.
+      Nothing is 700.
    ========================================================================== */
 
 :root {
-  --af-font-sans: var(--font-af-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --af-font-num: var(--font-af-num), var(--font-af-sans), ui-sans-serif, system-ui, sans-serif;
+  /* ---- Neutral ramp -----------------------------------------------------
+     Twelve steps with fixed semantic roles, authored in OKLCH on a single
+     lightness curve so each step is perceptually one notch from the last.
+     Tinted toward the accent hue at very low chroma — pure greys read as a
+     wireframe. */
+  --n1:  oklch(0.995 0.002 264);  /* raised background            */
+  --n2:  oklch(0.984 0.003 264);  /* app canvas                   */
+  --n3:  oklch(0.966 0.004 264);  /* sunken: table head, wells    */
+  --n4:  oklch(0.953 0.005 264);  /* component hover              */
+  --n5:  oklch(0.938 0.006 264);  /* component active / selected  */
+  --n6:  oklch(0.918 0.007 264);  /* subtle border, separators    */
+  --n7:  oklch(0.888 0.009 264);  /* element border               */
+  --n8:  oklch(0.818 0.011 264);  /* strong border, hover         */
+  --n9:  oklch(0.645 0.014 264);  /* muted glyphs, null dashes    */
+  --n10: oklch(0.605 0.015 264);  /* muted glyphs, hover          */
+  --n11: oklch(0.505 0.016 264);  /* secondary text               */
+  --n12: oklch(0.235 0.014 264);  /* primary text                 */
 
-  /* 4px rhythm */
-  --af-1: 4px;
-  --af-2: 8px;
-  --af-3: 12px;
-  --af-4: 16px;
-  --af-5: 20px;
-  --af-6: 24px;
-  --af-7: 32px;
-  --af-8: 40px;
-  --af-9: 56px;
-  --af-10: 72px;
+  --canvas: var(--n2);
+  --surface: #ffffff;
+  --sunken: var(--n3);
+  --raised: #ffffff;
 
-  --af-r-1: 6px;
-  --af-r-2: 10px;
-  --af-r-3: 14px;
-  --af-r-4: 20px;
-  --af-r-pill: 999px;
+  --text: var(--n12);
+  --text-2: var(--n11);
+  --text-3: var(--n9);
 
-  --af-fast: 120ms;
-  --af-base: 200ms;
-  --af-slow: 400ms;
-  --af-ease: cubic-bezier(0.2, 0, 0, 1);
-  --af-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Borders as alpha, so they composite correctly over canvas and surface. */
+  --hairline: rgba(15, 20, 34, 0.055);
+  --border: rgba(15, 20, 34, 0.095);
+  --border-strong: rgba(15, 20, 34, 0.17);
 
-  /* ---- Light surfaces ---- */
-  --af-canvas: #f6f7f9;
-  --af-surface: #ffffff;
-  --af-surface-2: #f0f2f5;
-  --af-surface-3: #e7eaee;
-  --af-border: rgba(9, 13, 20, 0.10);
-  --af-border-strong: rgba(9, 13, 20, 0.18);
-  --af-hairline: rgba(9, 13, 20, 0.06);
+  /* ---- Accent: one colour, used sparingly ---- */
+  --accent: oklch(0.505 0.176 266);
+  --accent-hover: oklch(0.455 0.176 266);
+  --accent-soft: oklch(0.505 0.176 266 / 0.08);
+  --accent-line: oklch(0.505 0.176 266 / 0.28);
+  --on-accent: #ffffff;
 
-  --af-text: #0a0e15;
-  --af-text-2: rgba(10, 14, 21, 0.62);
-  --af-text-3: rgba(10, 14, 21, 0.42);
+  /* ---- Semantics, matched to one lightness and chroma envelope so they
+          read as a family rather than as a traffic light ---- */
+  --pos: oklch(0.515 0.108 158);
+  --pos-soft: oklch(0.515 0.108 158 / 0.09);
+  --neg: oklch(0.515 0.158 27);
+  --neg-soft: oklch(0.515 0.158 27 / 0.085);
+  --warn: oklch(0.545 0.115 62);
+  --warn-soft: oklch(0.545 0.115 62 / 0.10);
 
-  --af-accent: #1f4fe0;
-  --af-accent-hover: #1a44c4;
-  --af-accent-soft: rgba(31, 79, 224, 0.09);
-  --af-accent-line: rgba(31, 79, 224, 0.24);
-  --af-on-accent: #ffffff;
+  /* ---- Shadows: tinted, layered, never above 0.16 alpha ---- */
+  --shadow-xs: 0 1px 2px rgba(16, 22, 40, 0.05);
+  --shadow-pop:
+    0 0 0 1px rgba(16, 22, 40, 0.05),
+    0 4px 8px -2px rgba(16, 22, 40, 0.06),
+    0 12px 32px -8px rgba(16, 22, 40, 0.14);
 
-  --af-go: #0e7a5f;
-  --af-go-soft: rgba(14, 122, 95, 0.10);
-  --af-caution: #a8620a;
-  --af-caution-soft: rgba(168, 98, 10, 0.10);
-  --af-stop: #c02626;
-  --af-stop-soft: rgba(192, 38, 38, 0.09);
+  /* ---- Space: 4px base with a 2px escape hatch. No 10, 14 or 18: arbitrary
+          in-between values are what make an interface feel unrhythmic. ---- */
+  --s1: 4px;   --s2: 8px;   --s3: 12px;  --s4: 16px;
+  --s5: 20px;  --s6: 24px;  --s8: 32px;  --s10: 40px;
+  --s12: 48px; --s16: 64px;
 
-  --af-shadow-1: 0 1px 2px rgba(9, 13, 20, 0.05);
-  --af-shadow-2: 0 4px 16px -4px rgba(9, 13, 20, 0.10), 0 1px 2px rgba(9, 13, 20, 0.05);
-  --af-shadow-3: 0 24px 60px -20px rgba(9, 13, 20, 0.20);
-  --af-focus: rgba(31, 79, 224, 0.35);
+  --r-sm: 4px;   /* inputs, pills, checkboxes */
+  --r-md: 6px;   /* buttons, menu items       */
+  --r-lg: 8px;   /* cards, tables             */
+  --r-xl: 12px;  /* modals, popovers          */
+
+  /* ---- Motion. Nothing over 300ms in a tool used six hours a day. ---- */
+  --t-hover: 120ms;
+  --t-enter: 140ms;
+  --t-exit: 90ms;
+  --t-modal: 200ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  --row-h: 36px;
+  --sidebar-w: 236px;
+
+  --font-sans: var(--font-af-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
-html[data-theme="dark"] {
-  --af-canvas: #07090d;
-  --af-surface: #0d1016;
-  --af-surface-2: #12161e;
-  --af-surface-3: #191e28;
-  --af-border: rgba(255, 255, 255, 0.09);
-  --af-border-strong: rgba(255, 255, 255, 0.16);
-  --af-hairline: rgba(255, 255, 255, 0.05);
-
-  --af-text: #f2f4f7;
-  --af-text-2: rgba(242, 244, 247, 0.60);
-  --af-text-3: rgba(242, 244, 247, 0.38);
-
-  --af-accent: #5b87ff;
-  --af-accent-hover: #7098ff;
-  --af-accent-soft: rgba(91, 135, 255, 0.12);
-  --af-accent-line: rgba(91, 135, 255, 0.30);
-  --af-on-accent: #05070c;
-
-  --af-go: #2fbe8f;
-  --af-go-soft: rgba(47, 190, 143, 0.13);
-  --af-caution: #e0a13c;
-  --af-caution-soft: rgba(224, 161, 60, 0.13);
-  --af-stop: #f2635b;
-  --af-stop-soft: rgba(242, 99, 91, 0.12);
-
-  --af-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --af-shadow-2: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
-  --af-shadow-3: 0 24px 60px -20px rgba(0, 0, 0, 0.7);
-  --af-focus: rgba(91, 135, 255, 0.40);
-}
-
-* {
-  box-sizing: border-box;
-  min-width: 0;
-}
-
-html,
-body {
-  height: 100%;
-}
+* { box-sizing: border-box; min-width: 0; }
+html, body { height: 100%; }
 
 body {
   margin: 0;
-  background: var(--af-canvas);
-  color: var(--af-text);
-  font-family: var(--af-font-sans);
-  font-size: 14px;
+  background: var(--canvas);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 13px;
   line-height: 1.5;
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-synthesis-weight: none;
 }
 
+/* Focus: a solid ring with a white spacer so it reads on canvas and on
+   surface alike. Never animated — animate the element, not the ring. */
 :focus-visible {
-  outline: 2px solid transparent;
-  box-shadow: 0 0 0 2px var(--af-canvas), 0 0 0 4px var(--af-focus);
-  border-radius: var(--af-r-1);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
+  border-radius: var(--r-sm);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     transition-duration: 1ms !important;
     animation-duration: 1ms !important;
-    animation-iteration-count: 1 !important;
   }
 }
 
 /* ==========================================================================
-   Typography
+   Numerals
+
+   Tabular figures are applied only where numbers live — tables, metrics,
+   inputs. Switching them on globally makes running prose look typewritten.
    ========================================================================== */
 
-.af-num {
-  font-family: var(--af-font-num);
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1, "cv01" 1;
+.num {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
-.af-display {
-  font-size: clamp(40px, 6vw, 60px);
-  line-height: 1;
-  font-weight: 640;
-  letter-spacing: -0.035em;
-}
-
-.af-h1 {
-  font-size: 22px;
-  line-height: 1.2;
-  font-weight: 620;
-  letter-spacing: -0.02em;
-  margin: 0;
-}
-
-.af-h2 {
-  font-size: 16px;
-  line-height: 1.3;
-  font-weight: 600;
-  letter-spacing: -0.012em;
-  margin: 0;
-}
-
-.af-eyebrow {
-  font-size: 10.5px;
-  font-weight: 620;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--af-text-3);
-  margin: 0;
-}
-
-.af-body {
-  font-size: 14px;
-  line-height: 1.55;
-  color: var(--af-text-2);
-  margin: 0;
-}
-
-.af-small {
-  font-size: 12.5px;
-  line-height: 1.45;
-  color: var(--af-text-2);
-}
-
-.af-micro {
-  font-size: 11.5px;
-  line-height: 1.4;
-  color: var(--af-text-3);
-}
-
-.af-strong {
-  color: var(--af-text);
-  font-weight: 560;
+/* The currency code steps back so the digits carry the eye. */
+.cur {
+  font-size: 0.82em;
+  font-weight: 400;
+  color: var(--text-3);
+  margin-right: 0.28em;
 }
 
 /* ==========================================================================
-   Shell
+   Type
    ========================================================================== */
 
-.af-shell {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
+.t-display { font-size: 36px; line-height: 1.08; font-weight: 500; letter-spacing: -0.022em; }
+.t-h1      { font-size: 20px; line-height: 1.25; font-weight: 600; letter-spacing: -0.015em; margin: 0; }
+.t-h2      { font-size: 14px; line-height: 1.3;  font-weight: 600; letter-spacing: -0.006em; margin: 0; }
+.t-body    { font-size: 13px; line-height: 1.55; color: var(--text-2); margin: 0; }
+.t-sm      { font-size: 12px; line-height: 1.45; color: var(--text-2); }
+.t-xs      { font-size: 11px; line-height: 1.4;  color: var(--text-3); letter-spacing: 0.005em; }
+
+/* Sentence case, not all-caps: at 11px, capitals lose their shape. */
+.t-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0;
 }
 
-.af-topbar {
+.t-strong { color: var(--text); font-weight: 500; }
+.t-pos { color: var(--pos); }
+.t-neg { color: var(--neg); }
+.t-muted { color: var(--text-3); }
+
+/* ==========================================================================
+   Shell: sidebar on canvas, content on surface. This single step does more
+   work than any shadow.
+   ========================================================================== */
+
+.shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  min-height: 100%;
+}
+
+.sidebar {
   position: sticky;
   top: 0;
-  z-index: 30;
+  height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--af-4);
-  height: 56px;
-  padding: 0 var(--af-6);
-  border-bottom: 1px solid var(--af-hairline);
-  background: color-mix(in oklab, var(--af-canvas) 82%, transparent);
-  backdrop-filter: blur(12px) saturate(140%);
+  flex-direction: column;
+  gap: var(--s1);
+  padding: var(--s3) var(--s3) var(--s4);
+  background: var(--canvas);
+  border-right: 1px solid var(--hairline);
 }
 
-.af-brand {
+.brand {
   display: flex;
   align-items: center;
-  gap: var(--af-3);
-  font-weight: 640;
-  letter-spacing: -0.02em;
-  font-size: 14.5px;
+  gap: var(--s2);
+  height: 40px;
+  padding: 0 var(--s2);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
 }
 
-.af-brand__mark {
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
-  background: linear-gradient(150deg, var(--af-accent), color-mix(in oklab, var(--af-accent) 55%, #8b5cf6));
+.brand__mark {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: var(--accent);
   position: relative;
   flex: none;
 }
 
-.af-brand__mark::after {
+.brand__mark::after {
   content: "";
   position: absolute;
-  inset: 5px 5px auto 5px;
-  height: 2px;
+  left: 4px;
+  right: 4px;
+  top: 6px;
+  height: 1.5px;
   border-radius: 2px;
-  background: var(--af-on-accent);
-  opacity: 0.9;
+  background: var(--on-accent);
 }
 
-.af-topbar__meta {
-  display: flex;
-  align-items: center;
-  gap: var(--af-5);
+.brand__mark::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 8px;
+  top: 10px;
+  height: 1.5px;
+  border-radius: 2px;
+  background: var(--on-accent);
+  opacity: 0.6;
 }
 
-.af-metaItem {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
+.nav { display: flex; flex-direction: column; gap: 2px; }
 
-.af-metaItem__k {
-  font-size: 10px;
-  font-weight: 620;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--af-text-3);
-}
-
-.af-metaItem__v {
-  font-size: 12.5px;
-  font-weight: 580;
-}
-
-.af-main {
-  flex: 1;
-  padding: var(--af-7) var(--af-6) var(--af-10);
-}
-
-.af-container {
-  max-width: 1240px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--af-6);
-}
-
-.af-workbench {
-  display: grid;
-  grid-template-columns: 316px minmax(0, 1fr);
-  gap: var(--af-6);
-  align-items: start;
-}
-
-@media (max-width: 1080px) {
-  .af-workbench {
-    grid-template-columns: 1fr;
-  }
-}
-
-.af-column {
-  display: flex;
-  flex-direction: column;
-  gap: var(--af-4);
-  min-width: 0;
-}
-
-/* ==========================================================================
-   Panels
-   ========================================================================== */
-
-.af-panel {
-  background: var(--af-surface);
-  border: 1px solid var(--af-border);
-  border-radius: var(--af-r-3);
-  box-shadow: var(--af-shadow-1);
-}
-
-.af-panel__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--af-3);
-  padding: var(--af-4) var(--af-5);
-  border-bottom: 1px solid var(--af-hairline);
-}
-
-.af-panel__body {
-  padding: var(--af-5);
-}
-
-.af-panel__body--flush {
-  padding: 0;
-}
-
-.af-sticky {
-  position: sticky;
-  top: 80px;
-}
-
-@media (max-width: 1080px) {
-  .af-sticky {
-    position: static;
-  }
-}
-
-/* ==========================================================================
-   Form controls
-   ========================================================================== */
-
-.af-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--af-2);
-}
-
-.af-field__label {
+.nav__section {
+  padding: var(--s4) var(--s2) var(--s1);
   font-size: 11px;
-  font-weight: 620;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--af-text-3);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--text-3);
 }
 
-.af-field__row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--af-3);
-}
-
-.af-input,
-.af-select {
-  width: 100%;
-  height: 36px;
-  padding: 0 var(--af-3);
-  border-radius: var(--af-r-2);
-  border: 1px solid var(--af-border);
-  background: var(--af-surface-2);
-  color: var(--af-text);
+.nav__item {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  height: 30px;
+  padding: 0 var(--s2);
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--text-2);
   font-family: inherit;
-  font-size: 13.5px;
-  font-weight: 520;
-  transition: border-color var(--af-base) var(--af-ease), background-color var(--af-base) var(--af-ease);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--t-hover) ease-out, color var(--t-hover) ease-out;
 }
 
-.af-input.af-num,
-.af-select.af-num {
+.nav__item:hover { background: var(--n4); color: var(--text); }
+
+/* Active is a surface tint plus an accent glyph — not a solid accent fill,
+   which is the template pattern. */
+.nav__item[aria-current="page"] {
+  background: var(--n5);
+  color: var(--text);
+}
+
+.nav__item[aria-current="page"] .nav__icon { color: var(--accent); }
+
+.nav__icon { width: 16px; height: 16px; flex: none; color: var(--text-3); }
+
+.nav__count {
+  margin-left: auto;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-3);
   font-variant-numeric: tabular-nums;
 }
 
-.af-select {
-  appearance: none;
-  padding-right: var(--af-7);
-  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
-    linear-gradient(135deg, currentColor 50%, transparent 50%);
-  background-position: calc(100% - 17px) 15px, calc(100% - 12px) 15px;
-  background-size: 5px 5px, 5px 5px;
-  background-repeat: no-repeat;
-  cursor: pointer;
-}
+/* A count is only accent-coloured when it is a queue the dealer must clear. */
+.nav__count--action { color: var(--accent); }
 
-.af-input:hover,
-.af-select:hover {
-  border-color: var(--af-border-strong);
-}
+.sidebar__spacer { flex: 1; }
 
-.af-input:focus,
-.af-select:focus {
-  outline: none;
-  border-color: var(--af-accent-line);
-  background: var(--af-surface);
-  box-shadow: 0 0 0 3px var(--af-accent-soft);
-}
-
-.af-segmented {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
+.sidebar__foot {
+  display: flex;
+  flex-direction: column;
   gap: 2px;
-  padding: 2px;
-  border-radius: var(--af-r-2);
-  background: var(--af-surface-2);
-  border: 1px solid var(--af-border);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--hairline);
 }
 
-.af-segmented__item {
-  height: 30px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--af-text-2);
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-3);
   font-family: inherit;
-  font-size: 12.5px;
-  font-weight: 580;
-  cursor: pointer;
-  transition: background-color var(--af-base) var(--af-ease), color var(--af-base) var(--af-ease);
 }
 
-.af-segmented__item:hover {
-  color: var(--af-text);
+/* ==========================================================================
+   Content
+   ========================================================================== */
+
+.main {
+  background: var(--surface);
+  border-left: 1px solid var(--hairline);
+  min-width: 0;
 }
 
-.af-segmented__item[aria-pressed="true"] {
-  background: var(--af-surface);
-  color: var(--af-text);
-  box-shadow: var(--af-shadow-1);
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  height: 52px;
+  padding: 0 var(--s6);
+  background: var(--surface);
+  border-bottom: 1px solid var(--hairline);
 }
 
-.af-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 22px;
-  background: transparent;
-  cursor: pointer;
+.topbar__title { display: flex; align-items: baseline; gap: var(--s3); }
+
+.page { padding: var(--s6) var(--s6) var(--s16); }
+
+.stack-2 { display: flex; flex-direction: column; gap: var(--s2); }
+.stack-3 { display: flex; flex-direction: column; gap: var(--s3); }
+.stack-4 { display: flex; flex-direction: column; gap: var(--s4); }
+.stack-6 { display: flex; flex-direction: column; gap: var(--s6); }
+.stack-8 { display: flex; flex-direction: column; gap: var(--s8); }
+
+.row { display: flex; align-items: center; gap: var(--s3); }
+.row--between { justify-content: space-between; }
+.row--baseline { align-items: baseline; }
+.wrap { flex-wrap: wrap; }
+
+.section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s3);
 }
 
-.af-slider::-webkit-slider-runnable-track {
-  height: 4px;
-  border-radius: 999px;
-  background: var(--af-surface-3);
+/* ==========================================================================
+   Panels — bordered, not shadowed
+   ========================================================================== */
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
 }
 
-.af-slider::-moz-range-track {
-  height: 4px;
-  border-radius: 999px;
-  background: var(--af-surface-3);
+.panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--hairline);
 }
 
-.af-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  margin-top: -6px;
-  border-radius: 999px;
-  background: var(--af-surface);
-  border: 1.5px solid var(--af-accent);
-  box-shadow: var(--af-shadow-2);
-  transition: transform var(--af-fast) var(--af-ease);
+.panel__body { padding: var(--s4); }
+.panel__body--flush { padding: 0; }
+
+/* ==========================================================================
+   Metric tiles: label, figure, prior period beneath
+   ========================================================================== */
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: var(--s3);
 }
 
-.af-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  background: var(--af-surface);
-  border: 1.5px solid var(--af-accent);
-  box-shadow: var(--af-shadow-2);
+.metric {
+  padding: var(--s3) var(--s4) var(--s4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
 }
 
-.af-slider:active::-webkit-slider-thumb {
-  transform: scale(1.15);
+.metric__label { font-size: 11.5px; font-weight: 500; color: var(--text-3); }
+
+.metric__value {
+  font-size: 26px;
+  line-height: 1.15;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text);
 }
+
+.metric__value--sm { font-size: 20px; }
+.metric__sub { font-size: 11.5px; color: var(--text-3); }
 
 /* ==========================================================================
    Buttons
    ========================================================================== */
 
-.af-btn {
+.btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--af-2);
-  height: 36px;
-  padding: 0 var(--af-4);
-  border-radius: var(--af-r-2);
+  gap: var(--s2);
+  height: 32px;
+  padding: 0 var(--s3);
+  border-radius: var(--r-md);
   border: 1px solid transparent;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-2);
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--t-hover) ease-out, border-color var(--t-hover) ease-out,
+    color var(--t-hover) ease-out;
+}
+
+.btn--primary { background: var(--accent); color: var(--on-accent); }
+.btn--primary:hover { background: var(--accent-hover); }
+
+.btn--outline { border-color: var(--border); color: var(--text); background: var(--surface); }
+.btn--outline:hover { border-color: var(--border-strong); }
+
+.btn--quiet:hover { background: var(--n4); color: var(--text); }
+
+.btn--sm { height: 26px; padding: 0 var(--s2); font-size: 12px; }
+
+/* ==========================================================================
+   Form controls
+   ========================================================================== */
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field__label { font-size: 11.5px; font-weight: 500; color: var(--text-3); }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
+
+.input, .select {
+  width: 100%;
+  height: 32px;
+  padding: 0 var(--s3);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   font-family: inherit;
   font-size: 13px;
-  font-weight: 580;
-  letter-spacing: -0.005em;
+  font-weight: 400;
+  transition: border-color var(--t-hover) ease-out, box-shadow var(--t-hover) ease-out;
+}
+
+.input:hover, .select:hover { border-color: var(--border-strong); }
+
+.input:focus, .select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.select {
+  appearance: none;
+  padding-right: var(--s8);
   cursor: pointer;
-  white-space: nowrap;
-  transition: background-color var(--af-base) var(--af-ease), border-color var(--af-base) var(--af-ease),
-    color var(--af-base) var(--af-ease);
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 16px) 14px, calc(100% - 11px) 14px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
 }
 
-.af-btn--primary {
-  background: var(--af-accent);
-  color: var(--af-on-accent);
+.segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--r-md);
+  background: var(--sunken);
+  border: 1px solid var(--hairline);
 }
 
-.af-btn--primary:hover {
-  background: var(--af-accent-hover);
-}
-
-.af-btn--ghost {
+.segmented__item {
+  height: 26px;
+  border: 0;
+  border-radius: var(--r-sm);
   background: transparent;
-  border-color: var(--af-border);
-  color: var(--af-text-2);
+  color: var(--text-2);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--t-hover) ease-out, color var(--t-hover) ease-out;
 }
 
-.af-btn--ghost:hover {
-  border-color: var(--af-border-strong);
-  color: var(--af-text);
+.segmented__item:hover { color: var(--text); }
+
+.segmented__item[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-xs);
 }
 
-.af-btn--quiet {
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 18px;
   background: transparent;
-  color: var(--af-text-3);
-  height: 28px;
-  padding: 0 var(--af-2);
+  cursor: pointer;
 }
 
-.af-btn--quiet:hover {
-  color: var(--af-text);
+.slider::-webkit-slider-runnable-track { height: 3px; border-radius: 999px; background: var(--n6); }
+.slider::-moz-range-track { height: 3px; border-radius: 999px; background: var(--n6); }
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5.5px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+  box-shadow: var(--shadow-xs);
+}
+
+.slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
 }
 
 /* ==========================================================================
-   Decision headline — the one thing on the screen that matters
+   Tables — 36px rows, horizontal separators only, no striping
    ========================================================================== */
 
-.af-decision {
-  position: relative;
+.table-wrap { overflow-x: auto; }
+
+.table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+
+.table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 34px;
+  padding: 0 var(--s3);
+  text-align: left;
+  white-space: nowrap;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-3);
+  background: var(--sunken);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.table th:first-child, .table td:first-child { padding-left: var(--s4); }
+.table th:last-child, .table td:last-child { padding-right: var(--s4); }
+
+.table td {
+  height: var(--row-h);
+  padding: 0 var(--s3);
+  border-bottom: 1px solid var(--hairline);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.table tbody tr:last-child td { border-bottom: 0; }
+.table tbody tr { transition: background-color var(--t-exit) ease-out; }
+.table tbody tr:hover { background: var(--n3); transition-duration: 0ms; }
+
+.td-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.td-strong { color: var(--text); font-weight: 500; }
+.td-muted { color: var(--text-3); }
+
+/* An absent value is an em-dash, never a blank cell — blanks read as a bug. */
+.td-null { color: var(--n9); }
+
+/* ==========================================================================
+   Status pills — four semantics, one shape
+   ========================================================================== */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 21px;
+  padding: 0 7px;
+  border-radius: var(--r-sm);
+  border: 1px solid;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.pill__dot { width: 5px; height: 5px; border-radius: 999px; background: currentColor; flex: none; }
+
+.pill--pos  { color: var(--pos);  background: var(--pos-soft);  border-color: oklch(0.515 0.108 158 / 0.2); }
+.pill--neg  { color: var(--neg);  background: var(--neg-soft);  border-color: oklch(0.515 0.158 27 / 0.2); }
+.pill--warn { color: var(--warn); background: var(--warn-soft); border-color: oklch(0.545 0.115 62 / 0.22); }
+.pill--calm { color: var(--text-2); background: var(--n3); border-color: var(--hairline); }
+.pill--accent { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-line); }
+
+/* ==========================================================================
+   Decision headline
+   ========================================================================== */
+
+.decision {
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
   overflow: hidden;
-  border-radius: var(--af-r-4);
-  border: 1px solid var(--af-border);
-  background: var(--af-surface);
-  box-shadow: var(--af-shadow-2);
 }
 
-/* A single directional light source, tinted by the verdict. Restrained enough
-   to read as depth rather than as a gradient someone applied for fun. */
-.af-decision::before {
-  content: "";
-  position: absolute;
-  inset: -1px -1px auto -1px;
-  height: 220px;
-  background: radial-gradient(
-    120% 100% at 12% 0%,
-    var(--af-verdict-glow, var(--af-accent-soft)) 0%,
-    transparent 62%
-  );
-  pointer-events: none;
-}
-
-.af-decision__inner {
-  position: relative;
-  padding: var(--af-7);
-}
-
-.af-decision__top {
+.decision__top {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--af-5);
+  gap: var(--s5);
   flex-wrap: wrap;
-  margin-bottom: var(--af-6);
+  padding: var(--s5) var(--s5) var(--s4);
 }
 
-.af-verdict {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--af-2);
-  height: 26px;
-  padding: 0 var(--af-3);
-  border-radius: var(--af-r-pill);
-  font-size: 11.5px;
-  font-weight: 620;
-  letter-spacing: 0.02em;
-  border: 1px solid;
-}
+.decision__figure { display: flex; align-items: baseline; gap: 2px; }
 
-.af-verdict__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: currentColor;
-}
-
-.af-verdict--go {
-  color: var(--af-go);
-  background: var(--af-go-soft);
-  border-color: color-mix(in oklab, var(--af-go) 26%, transparent);
-}
-
-.af-verdict--caution {
-  color: var(--af-caution);
-  background: var(--af-caution-soft);
-  border-color: color-mix(in oklab, var(--af-caution) 26%, transparent);
-}
-
-.af-verdict--stop {
-  color: var(--af-stop);
-  background: var(--af-stop-soft);
-  border-color: color-mix(in oklab, var(--af-stop) 26%, transparent);
-}
-
-.af-decision__headline {
-  display: flex;
-  align-items: baseline;
-  gap: var(--af-3);
-  flex-wrap: wrap;
-}
-
-.af-decision__currency {
-  font-size: 20px;
-  font-weight: 560;
-  color: var(--af-text-3);
-  letter-spacing: -0.01em;
-}
-
-.af-decision__amount {
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
-}
-
-.af-decision__caption {
-  margin-top: var(--af-3);
-  max-width: 62ch;
-}
-
-.af-decision__stats {
-  margin-top: var(--af-7);
+.decision__stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1px;
-  background: var(--af-hairline);
-  border: 1px solid var(--af-hairline);
-  border-radius: var(--af-r-2);
-  overflow: hidden;
+  border-top: 1px solid var(--hairline);
 }
 
-.af-stat {
-  background: var(--af-surface);
-  padding: var(--af-4) var(--af-4) var(--af-5);
+.decision__stat {
+  padding: var(--s3) var(--s4) var(--s4);
+  border-right: 1px solid var(--hairline);
   display: flex;
   flex-direction: column;
-  gap: var(--af-2);
+  gap: 2px;
 }
 
-.af-stat__k {
-  font-size: 10.5px;
-  font-weight: 620;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--af-text-3);
+.decision__stat:last-child { border-right: 0; }
+
+.decision__stat-k { font-size: 11.5px; font-weight: 500; color: var(--text-3); }
+
+.decision__stat-v {
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text);
 }
 
-.af-stat__v {
-  font-size: 19px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-}
-
-.af-stat__note {
-  font-size: 11.5px;
-  color: var(--af-text-3);
-}
-
-.af-stat--stop .af-stat__v {
-  color: var(--af-stop);
-}
-
-.af-stat--go .af-stat__v {
-  color: var(--af-go);
-}
+.decision__stat-n { font-size: 11.5px; color: var(--text-3); }
 
 /* ==========================================================================
    Bridge waterfall
    ========================================================================== */
 
-.af-bridge {
-  display: flex;
-  flex-direction: column;
-}
-
-.af-bridgeRow {
+.bridge__row {
   display: grid;
-  grid-template-columns: minmax(150px, 1.4fr) minmax(120px, 2fr) 108px;
+  grid-template-columns: minmax(160px, 1.3fr) minmax(120px, 2fr) 104px;
   align-items: center;
-  gap: var(--af-4);
-  padding: var(--af-3) var(--af-5);
-  border-bottom: 1px solid var(--af-hairline);
+  gap: var(--s4);
+  height: var(--row-h);
+  padding: 0 var(--s4);
+  border-bottom: 1px solid var(--hairline);
+  font-size: 12.5px;
+  color: var(--text-2);
 }
 
-.af-bridgeRow:last-child {
-  border-bottom: 0;
+.bridge__row:last-child { border-bottom: 0; }
+
+.bridge__row--total {
+  height: 44px;
+  background: var(--sunken);
+  color: var(--text);
+  font-weight: 500;
 }
 
-.af-bridgeRow--total {
-  background: var(--af-surface-2);
-  padding-top: var(--af-4);
-  padding-bottom: var(--af-4);
-}
+.bridge__track { position: relative; height: 18px; }
 
-.af-bridgeRow__label {
-  font-size: 13px;
-  color: var(--af-text-2);
-  display: flex;
-  align-items: center;
-  gap: var(--af-2);
-}
-
-.af-bridgeRow--total .af-bridgeRow__label {
-  color: var(--af-text);
-  font-weight: 600;
-}
-
-.af-bridgeRow__track {
-  position: relative;
-  height: 22px;
-}
-
-/* The bar floats from the previous running total to the new one, which is what
-   makes this a waterfall rather than a bar chart: the eye follows the descent. */
-.af-bridgeRow__bar {
+.bridge__bar {
   position: absolute;
-  top: 4px;
-  height: 14px;
-  border-radius: 3px;
-  transition: left var(--af-slow) var(--af-ease-out), width var(--af-slow) var(--af-ease-out);
+  top: 5px;
+  height: 8px;
+  border-radius: 2px;
+  transition: left var(--t-modal) var(--ease-out), width var(--t-modal) var(--ease-out);
 }
 
-.af-bridgeRow__bar--base {
-  background: color-mix(in oklab, var(--af-accent) 55%, transparent);
-}
+.bridge__bar--base   { background: var(--n8); }
+.bridge__bar--cost   { background: oklch(0.515 0.158 27 / 0.45); }
+.bridge__bar--margin { background: oklch(0.515 0.108 158 / 0.5); }
+.bridge__bar--total  { background: var(--accent); }
 
-.af-bridgeRow__bar--cost {
-  background: color-mix(in oklab, var(--af-stop) 42%, transparent);
-}
-
-.af-bridgeRow__bar--margin {
-  background: color-mix(in oklab, var(--af-go) 46%, transparent);
-}
-
-.af-bridgeRow__bar--total {
-  background: var(--af-accent);
-}
-
-.af-bridgeRow__value {
+.bridge__value {
   text-align: right;
-  font-size: 13px;
-  font-weight: 560;
-  font-variant-numeric: tabular-nums;
-  color: var(--af-text-2);
-}
-
-.af-bridgeRow--total .af-bridgeRow__value {
-  color: var(--af-text);
-  font-size: 14.5px;
-  font-weight: 640;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-weight: 500;
 }
 
 /* ==========================================================================
-   Chart
+   Charts — no vertical gridlines, no legend, direct labels
    ========================================================================== */
 
-.af-chart {
-  width: 100%;
-  height: auto;
-  display: block;
-  overflow: visible;
-}
-
-.af-chart__grid {
-  stroke: var(--af-hairline);
-  stroke-width: 1;
-}
-
-.af-chart__axis {
-  fill: var(--af-text-3);
+.chart { width: 100%; height: auto; display: block; overflow: visible; }
+.chart__grid { stroke: rgba(15, 20, 34, 0.05); stroke-width: 1; }
+.chart__axis {
+  fill: var(--text-3);
   font-size: 10.5px;
-  font-weight: 560;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
+.chart__line { fill: none; stroke: var(--accent); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.chart__area { fill: var(--accent); opacity: 0.07; }
+.chart__point { fill: var(--surface); stroke: var(--accent); stroke-width: 1.75; }
+.chart__point--active { fill: var(--accent); }
+.chart__marker { stroke: var(--n8); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart__hit { fill: transparent; cursor: pointer; }
 
-.af-chart__line {
-  fill: none;
-  stroke: var(--af-accent);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+/* Sparkline: shape only. The adjacent figure carries the precision. */
+.spark { display: block; }
+.spark__line { fill: none; stroke: var(--n9); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.spark__dot { fill: var(--n9); }
+
+/* ==========================================================================
+   Queue rows — one decision per row, action revealed on hover
+   ========================================================================== */
+
+.queue { display: flex; flex-direction: column; }
+
+.queue__row {
+  display: grid;
+  grid-template-columns: 22px minmax(190px, 1.6fr) minmax(160px, 1.5fr) 128px 116px;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 52px;
+  padding: var(--s2) var(--s4);
+  border-bottom: 1px solid var(--hairline);
+  text-align: left;
+  background: transparent;
+  border-left: 0; border-right: 0; border-top: 0;
+  width: 100%;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color var(--t-exit) ease-out;
 }
 
-.af-chart__area {
-  fill: var(--af-accent-soft);
+.queue__row:last-child { border-bottom: 0; }
+.queue__row:hover { background: var(--n3); transition-duration: 0ms; }
+
+.queue__mark { width: 6px; height: 6px; border-radius: 999px; }
+.queue__mark--neg { background: var(--neg); }
+.queue__mark--warn { background: var(--warn); }
+.queue__mark--pos { background: var(--pos); }
+.queue__mark--calm { background: var(--n8); }
+
+.queue__title { font-size: 13px; font-weight: 500; color: var(--text); }
+.queue__sub { font-size: 11.5px; color: var(--text-3); }
+.queue__num { text-align: right; font-variant-numeric: tabular-nums lining-nums; }
+
+/* ==========================================================================
+   Command palette
+   ========================================================================== */
+
+.cmdk__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(16, 22, 40, 0.24);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 16vh;
+  animation: fade var(--t-enter) ease-out;
 }
 
-.af-chart__point {
-  fill: var(--af-surface);
-  stroke: var(--af-accent);
-  stroke-width: 2;
-  transition: r var(--af-fast) var(--af-ease);
+.cmdk {
+  width: min(640px, calc(100vw - 32px));
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+  animation: pop var(--t-enter) var(--ease-out);
 }
 
-.af-chart__point--active {
-  fill: var(--af-accent);
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop { from { opacity: 0; transform: scale(0.985); } to { opacity: 1; transform: none; } }
+
+.cmdk__input {
+  width: 100%;
+  height: 50px;
+  padding: 0 var(--s5);
+  border: 0;
+  border-bottom: 1px solid var(--hairline);
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
 }
 
-.af-chart__marker {
-  stroke: var(--af-text-3);
-  stroke-width: 1;
-  stroke-dasharray: 3 3;
+.cmdk__input:focus { outline: none; }
+.cmdk__input::placeholder { color: var(--text-3); }
+
+.cmdk__list { max-height: 320px; overflow-y: auto; padding: var(--s2); }
+
+.cmdk__group {
+  padding: var(--s3) var(--s3) var(--s1);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
 }
 
-.af-chart__hit {
-  fill: transparent;
+.cmdk__item {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--s3);
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  text-align: left;
   cursor: pointer;
 }
 
-.af-chart__hit:hover + .af-chart__point,
-.af-chart__hit:focus-visible + .af-chart__point {
-  r: 6;
-}
+.cmdk__item[data-active="true"] { background: var(--n4); }
+.cmdk__item-hint { margin-left: auto; }
 
 /* ==========================================================================
-   Tables
+   Empty and refusal states
    ========================================================================== */
 
-.af-tableWrap {
-  overflow-x: auto;
-}
-
-.af-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12.5px;
-}
-
-.af-table th {
-  text-align: left;
-  padding: var(--af-3) var(--af-4);
-  font-size: 10.5px;
-  font-weight: 620;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--af-text-3);
-  border-bottom: 1px solid var(--af-hairline);
-  white-space: nowrap;
-  position: sticky;
-  top: 0;
-  background: var(--af-surface);
-}
-
-.af-table td {
-  padding: var(--af-3) var(--af-4);
-  border-bottom: 1px solid var(--af-hairline);
-  color: var(--af-text-2);
-  white-space: nowrap;
-}
-
-.af-table tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-.af-table tbody tr:hover td {
-  background: var(--af-surface-2);
-}
-
-.af-table .af-td--num {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  color: var(--af-text);
-  font-weight: 540;
-}
-
-.af-table .af-td--muted {
-  color: var(--af-text-3);
-}
-
-/* Weight bar rendered inside the cell, so the eye can rank evidence at a glance
-   without reading a single number. */
-.af-weight {
-  display: flex;
-  align-items: center;
-  gap: var(--af-2);
-  justify-content: flex-end;
-}
-
-.af-weight__track {
-  display: block;
-  width: 46px;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--af-surface-3);
-  border: 1px solid var(--af-hairline);
-  overflow: hidden;
-}
-
-.af-weight__fill {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--af-accent);
-}
-
-/* ==========================================================================
-   Confidence
-   ========================================================================== */
-
-.af-conf {
+.empty {
+  padding: var(--s12) var(--s6);
   display: flex;
   flex-direction: column;
-  gap: var(--af-4);
-}
-
-.af-conf__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--af-3);
-}
-
-.af-conf__score {
-  font-size: 26px;
-  font-weight: 620;
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
-}
-
-.af-conf__band {
-  font-size: 11.5px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.af-conf--high .af-conf__band,
-.af-conf--high .af-conf__score {
-  color: var(--af-go);
-}
-
-.af-conf--moderate .af-conf__band,
-.af-conf--moderate .af-conf__score {
-  color: var(--af-caution);
-}
-
-.af-conf--low .af-conf__band,
-.af-conf--low .af-conf__score {
-  color: var(--af-stop);
-}
-
-.af-driver {
-  display: grid;
-  grid-template-columns: 1fr 64px;
   align-items: center;
-  gap: var(--af-3);
-  padding: var(--af-2) 0;
+  gap: var(--s2);
+  text-align: center;
 }
 
-.af-driver__label {
-  font-size: 12.5px;
-  color: var(--af-text);
-  font-weight: 540;
-}
-
-.af-driver__detail {
-  font-size: 11.5px;
-  color: var(--af-text-3);
-}
-
-.af-driver__track {
-  display: block;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--af-surface-3);
-  border: 1px solid var(--af-hairline);
-  overflow: hidden;
-}
-
-/* Explicitly coloured rather than `currentColor`: the drivers sit outside the
-   elements that carry the band colour, so inheriting produced an invisible bar
-   against the track. */
-.af-driver__fill {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--af-accent);
-  transition: width var(--af-slow) var(--af-ease-out);
-}
-
-.af-conf--high .af-driver__fill {
-  background: var(--af-go);
-}
-
-.af-conf--moderate .af-driver__fill {
-  background: var(--af-caution);
-}
-
-.af-conf--low .af-driver__fill {
-  background: var(--af-stop);
-}
-
-/* ==========================================================================
-   Risk chips
-   ========================================================================== */
-
-.af-risks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--af-2);
-}
-
-.af-risk {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--af-2);
-  padding: 5px var(--af-3);
-  border-radius: var(--af-r-pill);
-  border: 1px solid var(--af-border);
-  background: var(--af-surface-2);
-  font-size: 12px;
-  color: var(--af-text-2);
-}
-
-.af-risk__dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 999px;
-  flex: none;
-}
-
-.af-risk--info .af-risk__dot {
-  background: var(--af-text-3);
-}
-
-.af-risk--warning {
-  border-color: color-mix(in oklab, var(--af-caution) 26%, transparent);
-  background: var(--af-caution-soft);
-  color: var(--af-text);
-}
-
-.af-risk--warning .af-risk__dot {
-  background: var(--af-caution);
-}
-
-.af-risk--critical {
-  border-color: color-mix(in oklab, var(--af-stop) 30%, transparent);
-  background: var(--af-stop-soft);
-  color: var(--af-text);
-}
-
-.af-risk--critical .af-risk__dot {
-  background: var(--af-stop);
-}
-
-/* ==========================================================================
-   Insufficient-evidence state — a first-class outcome, not an error
-   ========================================================================== */
-
-.af-refusal {
-  padding: var(--af-8) var(--af-7);
+.refusal {
+  padding: var(--s8);
   display: flex;
   flex-direction: column;
-  gap: var(--af-4);
+  gap: var(--s3);
   align-items: flex-start;
 }
 
-.af-refusal__mark {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--af-r-2);
+.refusal__mark {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-md);
   display: grid;
   place-items: center;
-  background: var(--af-caution-soft);
-  color: var(--af-caution);
-  border: 1px solid color-mix(in oklab, var(--af-caution) 24%, transparent);
-  font-weight: 640;
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid oklch(0.545 0.115 62 / 0.22);
+  font-size: 14px;
+  font-weight: 600;
 }
 
-.af-list {
-  margin: 0;
-  padding-left: var(--af-5);
-  display: flex;
-  flex-direction: column;
-  gap: var(--af-2);
+.list { margin: 0; padding-left: var(--s5); display: flex; flex-direction: column; gap: 6px; }
+.list li { font-size: 12.5px; color: var(--text-2); }
+
+.divider { height: 1px; background: var(--hairline); border: 0; margin: 0; }
+
+/* Meter used for confidence drivers and evidence weights. */
+.meter { display: block; height: 4px; border-radius: 999px; background: var(--n5); overflow: hidden; }
+.meter__fill { display: block; height: 100%; border-radius: 999px; background: var(--n9); }
+.meter__fill--accent { background: var(--accent); }
+.meter__fill--pos { background: var(--pos); }
+.meter__fill--warn { background: var(--warn); }
+.meter__fill--neg { background: var(--neg); }
+
+.provenance {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-3);
 }
 
-.af-list li {
-  font-size: 13px;
-  color: var(--af-text-2);
+.provenance__dot { width: 5px; height: 5px; border-radius: 999px; background: var(--warn); flex: none; }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; flex-direction: row; align-items: center; overflow-x: auto; }
+  .sidebar__spacer, .sidebar__foot, .nav__section { display: none; }
+  .nav { flex-direction: row; }
 }
 
 /* ==========================================================================
-   Utilities
+   Appraisal workbench layout
    ========================================================================== */
 
-.af-row {
-  display: flex;
-  align-items: center;
-  gap: var(--af-3);
+.workbench {
+  display: grid;
+  grid-template-columns: 292px minmax(0, 1fr);
+  gap: var(--s4);
+  align-items: start;
 }
 
-.af-row--between {
-  justify-content: space-between;
+.workbench__col { display: flex; flex-direction: column; gap: var(--s4); min-width: 0; }
+
+.sticky-col { position: sticky; top: 68px; }
+
+.decision__inner { display: contents; }
+
+.decision__caption {
+  padding: 0 var(--s5) var(--s5);
+  max-width: 68ch;
 }
 
-.af-stack-2 {
-  display: flex;
-  flex-direction: column;
-  gap: var(--af-2);
-}
+.decision__stat--pos .decision__stat-v { color: var(--pos); }
+.decision__stat--neg .decision__stat-v { color: var(--neg); }
 
-.af-stack-3 {
-  display: flex;
-  flex-direction: column;
-  gap: var(--af-3);
-}
+.driver { display: grid; grid-template-columns: 1fr 72px; align-items: center; gap: var(--s3); }
 
-.af-stack-4 {
-  display: flex;
-  flex-direction: column;
-  gap: var(--af-4);
-}
-
-.af-stack-5 {
-  display: flex;
-  flex-direction: column;
-  gap: var(--af-5);
-}
-
-.af-divider {
-  height: 1px;
-  background: var(--af-hairline);
-  border: 0;
-  margin: 0;
-}
-
-.af-provenance {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--af-2);
-  font-size: 11px;
-  color: var(--af-text-3);
-}
-
-.af-provenance__dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--af-caution);
+@media (max-width: 1100px) {
+  .workbench { grid-template-columns: 1fr; }
+  .sticky-col { position: static; }
 }

@@ -25,7 +25,21 @@ export type Transmission = "manual" | "automatic";
 
 export type Drivetrain = "fwd" | "rwd" | "awd";
 
-export type SellerType = "dealer" | "private";
+/**
+ * Where a listing sits in the market.
+ *
+ * The distinction is not cosmetic. Dealer and private listings are *retail*
+ * prices and belong in a comparable set. Auction and trade listings are
+ * *acquisition* prices and must never be: mixing them drags the retail estimate
+ * down by the exact margin the dealer is trying to earn.
+ */
+export type SellerType = "dealer" | "private" | "auction" | "trade";
+
+/** Retail channels — the only ones valid as valuation evidence. */
+export const RETAIL_CHANNELS: readonly SellerType[] = ["dealer", "private"];
+
+/** Acquisition channels — where a dealer actually buys. */
+export const ACQUISITION_CHANNELS: readonly SellerType[] = ["auction", "trade", "private"];
 
 /** The vehicle being appraised, or a comparable from the market. */
 export interface Vehicle {
@@ -276,7 +290,12 @@ export interface AdjustmentLine {
 
 export interface ExcludedComparable {
   id: string;
-  reason: "wrong_derivative" | "outlier_price" | "too_stale" | "mileage_out_of_range";
+  reason:
+    | "wrong_derivative"
+    | "outlier_price"
+    | "too_stale"
+    | "mileage_out_of_range"
+    | "not_retail_channel";
 }
 
 /** Coefficients fitted from the comparable set, not hardcoded guesses. */

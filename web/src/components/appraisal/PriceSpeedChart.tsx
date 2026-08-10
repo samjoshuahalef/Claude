@@ -75,9 +75,9 @@ export function PriceSpeedChart({ curve, currency, recommendedPrice }: Props) {
   }, [curve]);
 
   return (
-    <div className="af-stack-4">
+    <div className="stack-4">
       <svg
-        className="af-chart"
+        className="chart"
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         role="img"
         aria-label="Expected days to sale at each asking price"
@@ -85,24 +85,24 @@ export function PriceSpeedChart({ curve, currency, recommendedPrice }: Props) {
         {geometry.gridDays.map((grid) => (
           <g key={grid.value}>
             <line
-              className="af-chart__grid"
+              className="chart__grid"
               x1={PAD.left}
               x2={WIDTH - PAD.right}
               y1={grid.y}
               y2={grid.y}
             />
-            <text className="af-chart__axis" x={PAD.left - 8} y={grid.y + 3.5} textAnchor="end">
+            <text className="chart__axis" x={PAD.left - 8} y={grid.y + 3.5} textAnchor="end">
               {grid.value}d
             </text>
           </g>
         ))}
 
-        <path className="af-chart__area" d={geometry.area} />
-        <path className="af-chart__line" d={geometry.line} />
+        <path className="chart__area" d={geometry.area} />
+        <path className="chart__line" d={geometry.line} />
 
         {/* Where the engine says to price. The reference the eye returns to. */}
         <line
-          className="af-chart__marker"
+          className="chart__marker"
           x1={geometry.x(recommendedPrice)}
           x2={geometry.x(recommendedPrice)}
           y1={PAD.top}
@@ -112,7 +112,7 @@ export function PriceSpeedChart({ curve, currency, recommendedPrice }: Props) {
         {curve.map((point, index) => (
           <g key={point.retailPrice}>
             <rect
-              className="af-chart__hit"
+              className="chart__hit"
               x={geometry.points[index].x - 22}
               y={PAD.top}
               width={44}
@@ -125,13 +125,13 @@ export function PriceSpeedChart({ curve, currency, recommendedPrice }: Props) {
               onClick={() => setActiveIndex(index)}
             />
             <circle
-              className={`af-chart__point${index === activeIndex ? " af-chart__point--active" : ""}`}
+              className={`chart__point${index === activeIndex ? " chart__point--active" : ""}`}
               cx={geometry.points[index].x}
               cy={geometry.points[index].y}
               r={index === activeIndex ? 5.5 : 3.5}
             />
             <text
-              className="af-chart__axis"
+              className="chart__axis"
               x={geometry.points[index].x}
               y={HEIGHT - 12}
               textAnchor="middle"
@@ -142,14 +142,14 @@ export function PriceSpeedChart({ curve, currency, recommendedPrice }: Props) {
         ))}
       </svg>
 
-      <div className="af-decision__stats">
+      <div className="decision__stats">
         <ReadoutStat label="Asking price" value={formatMoney(active.retailPrice, currency)} note={ordinalPercentile(active.marketPercentile)} />
         <ReadoutStat label="Expected to sell in" value={formatDays(active.expectedDays)} note="Median for this price position" />
         <ReadoutStat
           label="Gross at your ceiling"
           value={formatMoney(active.grossProfitAtMaxBuy, currency)}
           note="After VAT, prep, warranty and holding"
-          tone={active.grossProfitAtMaxBuy > 0 ? "go" : "stop"}
+          tone={active.grossProfitAtMaxBuy > 0 ? "pos" : "neg"}
         />
       </div>
     </div>
@@ -165,13 +165,13 @@ function ReadoutStat({
   label: string;
   value: string;
   note: string;
-  tone?: "go" | "stop";
+  tone?: "pos" | "neg";
 }) {
   return (
-    <div className={`af-stat${tone ? ` af-stat--${tone}` : ""}`}>
-      <span className="af-stat__k">{label}</span>
-      <span className="af-stat__v af-num">{value}</span>
-      <span className="af-stat__note">{note}</span>
+    <div className={`decision__stat${tone ? ` decision__stat--${tone}` : ""}`}>
+      <span className="decision__stat-k">{label}</span>
+      <span className="decision__stat-v num">{value}</span>
+      <span className="decision__stat-n">{note}</span>
     </div>
   );
 }

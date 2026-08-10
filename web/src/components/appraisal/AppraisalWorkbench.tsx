@@ -93,20 +93,20 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
   }
 
   return (
-    <div className="af-workbench">
-      <div className="af-column af-sticky">
-        <section className="af-panel">
-          <header className="af-panel__head">
-            <h2 className="af-h2">Vehicle</h2>
-            <span className="af-micro af-num">
+    <div className="workbench">
+      <div className="workbench__col sticky-col">
+        <section className="panel">
+          <header className="panel__head">
+            <h2 className="t-h2">Vehicle</h2>
+            <span className="t-xs num">
               {formatAge(monthsBetween(registration, asOf))}
             </span>
           </header>
-          <div className="af-panel__body af-stack-4">
-            <label className="af-field">
-              <span className="af-field__label">Model</span>
+          <div className="panel__body stack-4">
+            <label className="field">
+              <span className="field__label">Model</span>
               <select
-                className="af-select"
+                className="select"
                 value={bundleIndex}
                 onChange={(event) => selectBundle(Number(event.target.value))}
               >
@@ -118,11 +118,11 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
               </select>
             </label>
 
-            <div className="af-field__row">
-              <label className="af-field">
-                <span className="af-field__label">Mileage</span>
+            <div className="field-row">
+              <label className="field">
+                <span className="field__label">Mileage</span>
                 <input
-                  className="af-input af-num"
+                  className="input num"
                   type="number"
                   step={500}
                   min={0}
@@ -130,10 +130,10 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
                   onChange={(event) => setMileageKm(Number(event.target.value))}
                 />
               </label>
-              <label className="af-field">
-                <span className="af-field__label">First reg.</span>
+              <label className="field">
+                <span className="field__label">First reg.</span>
                 <input
-                  className="af-input af-num"
+                  className="input num"
                   type="month"
                   value={registration}
                   onChange={(event) => setRegistration(event.target.value)}
@@ -141,10 +141,10 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
               </label>
             </div>
 
-            <label className="af-field">
-              <span className="af-field__label">Asking price (optional)</span>
+            <label className="field">
+              <span className="field__label">Asking price (optional)</span>
               <input
-                className="af-input af-num"
+                className="input num"
                 type="number"
                 step={100}
                 min={0}
@@ -156,18 +156,18 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
           </div>
         </section>
 
-        <section className="af-panel">
-          <header className="af-panel__head">
-            <h2 className="af-h2">Your economics</h2>
+        <section className="panel">
+          <header className="panel__head">
+            <h2 className="t-h2">Your economics</h2>
           </header>
-          <div className="af-panel__body af-stack-5">
-            <div className="af-field">
-              <span className="af-field__label">Profile</span>
-              <div className="af-segmented">
+          <div className="panel__body stack-6">
+            <div className="field">
+              <span className="field__label">Profile</span>
+              <div className="segmented">
                 {ECONOMICS_PRESETS.map((option) => (
                   <button
                     key={option.id}
-                    className="af-segmented__item"
+                    className="segmented__item"
                     aria-pressed={option.id === presetId}
                     onClick={() => selectPreset(option.id)}
                     title={option.description}
@@ -178,15 +178,15 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
               </div>
             </div>
 
-            <div className="af-field">
-              <div className="af-row af-row--between">
-                <span className="af-field__label">Target gross profit</span>
-                <span className="af-small af-num af-strong">
+            <div className="field">
+              <div className="row row--between">
+                <span className="field__label">Target gross profit</span>
+                <span className="t-sm num t-strong">
                   {formatMoney(francs(targetGross))}
                 </span>
               </div>
               <input
-                className="af-slider"
+                className="slider"
                 type="range"
                 min={500}
                 max={9000}
@@ -197,13 +197,13 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
               />
             </div>
 
-            <div className="af-field">
-              <div className="af-row af-row--between">
-                <span className="af-field__label">Sell within</span>
-                <span className="af-small af-num af-strong">{targetDays} days</span>
+            <div className="field">
+              <div className="row row--between">
+                <span className="field__label">Sell within</span>
+                <span className="t-sm num t-strong">{targetDays} days</span>
               </div>
               <input
-                className="af-slider"
+                className="slider"
                 type="range"
                 min={14}
                 max={120}
@@ -214,9 +214,9 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
               />
             </div>
 
-            <hr className="af-divider" />
+            <hr className="divider" />
 
-            <dl className="af-stack-2" style={{ margin: 0 }}>
+            <dl className="stack-2" style={{ margin: 0 }}>
               <CostRow label="Preparation" value={economics.reconCost} />
               <CostRow label="Warranty" value={economics.warrantyCost} />
               <CostRow label="Transport & registration" value={economics.logisticsCost} />
@@ -226,19 +226,19 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
         </section>
       </div>
 
-      <div className="af-column">
+      <div className="workbench__col">
         {result.status === "insufficient" ? (
-          <section className="af-panel af-refusal">
-            <span className="af-refusal__mark" aria-hidden>
+          <section className="panel refusal">
+            <span className="refusal__mark" aria-hidden>
               !
             </span>
-            <h2 className="af-h1">Not enough evidence to price this car</h2>
-            <p className="af-body" style={{ maxWidth: "56ch" }}>
+            <h2 className="t-h1">Not enough evidence to price this car</h2>
+            <p className="t-body" style={{ maxWidth: "56ch" }}>
               {result.comparablesFound} usable comparables were found. AutoFlair will not
               produce a buying ceiling it cannot stand behind — a confident wrong number costs
               more than no number.
             </p>
-            <ul className="af-list">
+            <ul className="list">
               {result.remedies.map((remedy) => (
                 <li key={remedy}>{remedy}</li>
               ))}
@@ -252,24 +252,24 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
               targetDays={targetDays}
             />
 
-            <section className="af-panel">
-              <header className="af-panel__head">
-                <h2 className="af-h2">How we get there</h2>
-                <span className="af-micro">Retail → ceiling</span>
+            <section className="panel">
+              <header className="panel__head">
+                <h2 className="t-h2">How we get there</h2>
+                <span className="t-xs">Retail → ceiling</span>
               </header>
-              <div className="af-panel__body af-panel__body--flush">
+              <div className="panel__body panel__body--flush">
                 <BridgeWaterfall bridge={result.bridge} currency={result.currency} />
               </div>
             </section>
 
-            <section className="af-panel">
-              <header className="af-panel__head">
-                <h2 className="af-h2">Price against selling speed</h2>
-                <span className="af-micro af-num">
+            <section className="panel">
+              <header className="panel__head">
+                <h2 className="t-h2">Price against selling speed</h2>
+                <span className="t-xs num">
                   +1% price ≈ +{result.evidence.speedModel.daysPerPricePercent} days
                 </span>
               </header>
-              <div className="af-panel__body">
+              <div className="panel__body">
                 <PriceSpeedChart
                   curve={result.priceSpeedCurve}
                   currency={result.currency}
@@ -278,23 +278,23 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
               </div>
             </section>
 
-            <section className="af-panel">
-              <header className="af-panel__head">
-                <h2 className="af-h2">Confidence</h2>
+            <section className="panel">
+              <header className="panel__head">
+                <h2 className="t-h2">Confidence</h2>
               </header>
-              <div className="af-panel__body">
+              <div className="panel__body">
                 <ConfidencePanel confidence={result.confidence} risks={result.risks} />
               </div>
             </section>
 
-            <section className="af-panel">
-              <header className="af-panel__head">
-                <h2 className="af-h2">Evidence</h2>
-                <span className="af-micro af-num">
+            <section className="panel">
+              <header className="panel__head">
+                <h2 className="t-h2">Evidence</h2>
+                <span className="t-xs num">
                   Median {formatMoney(result.evidence.medianAdjustedPrice, result.currency)}
                 </span>
               </header>
-              <div className="af-panel__body af-panel__body--flush">
+              <div className="panel__body panel__body--flush">
                 <EvidenceTable evidence={result.evidence} currency={result.currency} />
               </div>
             </section>
@@ -307,9 +307,9 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
 
 function CostRow({ label, value }: { label: string; value: number }) {
   return (
-    <div className="af-row af-row--between">
-      <dt className="af-small">{label}</dt>
-      <dd className="af-small af-num af-strong" style={{ margin: 0 }}>
+    <div className="row row--between">
+      <dt className="t-sm">{label}</dt>
+      <dd className="t-sm num t-strong" style={{ margin: 0 }}>
         {formatMoney(value)}
       </dd>
     </div>

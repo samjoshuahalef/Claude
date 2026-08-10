@@ -38,9 +38,9 @@ export function EvidenceTable({ evidence, currency }: Props) {
   const maxWeight = Math.max(...sorted.map((item) => item.weight), 0.0001);
 
   return (
-    <div className="af-stack-4">
-      <div className="af-tableWrap">
-        <table className="af-table">
+    <div className="stack-4">
+      <div className="table-wrap">
+        <table className="table">
           <thead>
             <tr>
               <th scope="col">Registered</th>
@@ -73,19 +73,19 @@ export function EvidenceTable({ evidence, currency }: Props) {
               return (
                 <tr key={item.comparable.id}>
                   <td>{formatRegistration(item.comparable.vehicle.firstRegistration)}</td>
-                  <td className="af-td--num">{formatKm(item.comparable.vehicle.mileageKm)}</td>
-                  <td className="af-td--muted">
+                  <td className="td-num">{formatKm(item.comparable.vehicle.mileageKm)}</td>
+                  <td className="td-muted">
                     {item.comparable.sellerType === "private" ? "Private" : "Dealer"} ·{" "}
                     {item.comparable.region}
                   </td>
-                  <td className="af-td--muted">{formatShortDate(item.comparable.listedAt)}</td>
-                  <td className="af-td--num">
+                  <td className="td-muted">{formatShortDate(item.comparable.listedAt)}</td>
+                  <td className="td-num">
                     {formatMoney(item.comparable.askingPrice, currency)}
                   </td>
                   <td
-                    className="af-td--num"
+                    className="td-num"
                     style={{
-                      color: adjustment === 0 ? "var(--af-text-3)" : undefined,
+                      color: adjustment === 0 ? "var(--text-3)" : undefined,
                     }}
                     title={item.adjustmentBreakdown
                       .map((line) => `${line.label}: ${formatSignedMoney(line.amount, currency)}`)
@@ -93,19 +93,19 @@ export function EvidenceTable({ evidence, currency }: Props) {
                   >
                     {adjustment === 0 ? "—" : formatSignedMoney(adjustment, currency)}
                   </td>
-                  <td className="af-td--num">{formatMoney(item.adjustedPrice, currency)}</td>
-                  <td className="af-td--num">
+                  <td className="td-num">{formatMoney(item.adjustedPrice, currency)}</td>
+                  <td className="td-num">
                     {item.daysOnMarket === null ? (
-                      <span className="af-td--muted">live</span>
+                      <span className="td-muted">live</span>
                     ) : (
                       item.daysOnMarket
                     )}
                   </td>
-                  <td className="af-td--num">
-                    <span className="af-weight">
-                      <span className="af-weight__track">
+                  <td className="td-num">
+                    <span className="row" style={{ justifyContent: "flex-end" }}>
+                      <span className="meter">
                         <span
-                          className="af-weight__fill"
+                          className="meter__fill"
                           style={{ width: `${Math.round((item.weight / maxWeight) * 100)}%` }}
                         />
                       </span>
@@ -118,15 +118,15 @@ export function EvidenceTable({ evidence, currency }: Props) {
         </table>
       </div>
 
-      <div className="af-row af-row--between" style={{ padding: "0 var(--af-5) var(--af-5)" }}>
-        <span className="af-micro">
+      <div className="row row--between" style={{ padding: "0 var(--s4) var(--s4)" }}>
+        <span className="t-xs">
           {evidence.comparables.length} used · {evidence.excluded.length} excluded ·{" "}
           {evidence.adjustments.usedPriors
             ? "segment defaults used for depreciation"
             : `depreciation fitted on ${evidence.adjustments.fittedOn} listings`}
         </span>
         {sorted.length > 8 && (
-          <button className="af-btn af-btn--quiet" onClick={() => setExpanded((v) => !v)}>
+          <button className="btn btn--quiet" onClick={() => setExpanded((v) => !v)}>
             {expanded ? "Show fewer" : `Show all ${sorted.length}`}
           </button>
         )}

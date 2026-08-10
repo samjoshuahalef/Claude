@@ -48,7 +48,21 @@ export interface MarketDataSource {
   readonly id: string;
   readonly provenance: Provenance;
   supports(market: MarketCode): boolean;
+
+  /** Retail listings, used as valuation evidence. */
   fetchComparables(query: ComparableQuery): Promise<ComparableResponse>;
+
+  /**
+   * Cars currently for sale on acquisition channels — auction lots, trade
+   * offers, private sellers.
+   *
+   * A separate fetch rather than a filter on the retail feed, because they are
+   * genuinely different sources with different commercial terms. In production
+   * this is where auction house and trade platform integrations land, and it is
+   * the feed sourcing cannot work without: no dealer ever bought stock at
+   * retail, so scanning retail listings for bargains finds nothing, correctly.
+   */
+  fetchAcquisitionCandidates?(query: ComparableQuery): Promise<ComparableResponse>;
 }
 
 /**

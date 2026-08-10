@@ -213,8 +213,19 @@ export function annualisedReturn(args: {
 }): number {
   const { grossProfit, capitalEmployed, days } = args;
   if (capitalEmployed <= 0 || days <= 0) return 0;
-  const turns = 365 / days;
-  return (grossProfit / capitalEmployed) * turns;
+
+  /**
+   * Losses are not annualised.
+   *
+   * Annualising assumes the capital recycles at the same rate — sound for a
+   * profit, nonsense for a loss, which is taken once and not repeated. Scaling
+   * a loss by 365/days produces figures like −556%, which are arithmetically
+   * derivable and completely meaningless, and a dealer who sees one correctly
+   * concludes the software does not understand money.
+   */
+  if (grossProfit < 0) return grossProfit / capitalEmployed;
+
+  return (grossProfit / capitalEmployed) * (365 / days);
 }
 
 export function speedModelSummary(model: SpeedModel): string {

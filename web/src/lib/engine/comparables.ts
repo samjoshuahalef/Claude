@@ -8,6 +8,7 @@
  * cannot inspect.
  */
 
+import { RETAIL_CHANNELS } from "./types";
 import type {
   AdjustmentLine,
   AdjustmentModel,
@@ -106,6 +107,11 @@ function hardExclusion(
   asOf: IsoDate,
 ): ExcludedComparable["reason"] | null {
   const v = candidate.vehicle;
+
+  // Auction and trade prices are what dealers pay, not what the public pays.
+  // Letting them into a retail comparable set understates retail by roughly the
+  // whole gross margin, which would quietly halve every ceiling we produce.
+  if (!RETAIL_CHANNELS.includes(candidate.sellerType)) return "not_retail_channel";
 
   if (
     v.make.toLowerCase() !== subject.make.toLowerCase() ||
