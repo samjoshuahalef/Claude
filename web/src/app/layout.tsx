@@ -1,31 +1,28 @@
 import type { Metadata } from "next";
-import { Inter, Inter_Tight } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
+/**
+ * Inter, with its tabular figures enabled globally in `globals.css`.
+ * A single family keeps the interface quiet; the hierarchy comes from weight,
+ * size and colour rather than from mixing typefaces.
+ */
 const inter = Inter({
   variable: "--font-af-sans",
   subsets: ["latin"],
-});
-
-// Slightly tighter for compact UI labels and vehicle identifiers.
-const interTight = Inter_Tight({
-  variable: "--font-af-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "AutoFlair.ai",
+  title: "Autoflair — Acquisition intelligence for car dealers",
   description:
-    "AI operating system for premium car dealers — Switzerland first, Europe soon.",
+    "The most you should pay for a vehicle, computed from live market evidence and your own dealership economics.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} ${interTight.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" data-theme="dark" className={inter.variable}>
+      <body>{children}</body>
     </html>
   );
 }
