@@ -1,806 +1,1607 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   AutoFlair Design Tokens (neutral-first, premium calm)
-   - Light-first default
-   - Dark theme via html[data-theme="dark"]
+   Autoflair design system — light only.
+
+   Five rules, and everything else follows from them:
+
+   1. Depth comes from a 1px border and a surface step, not from shadows.
+      Shadows are reserved for things genuinely floating over content.
+   2. The canvas is not white. White is reserved for raised surfaces, which is
+      what gives the interface anywhere to go.
+   3. One accent colour. It appears on the primary action, the active nav item,
+      the focus ring, the selected row, and the primary chart series. Nowhere
+      else — not on icons, not on headings.
+   4. Colour is functional. Green is money made, red is money at risk, amber is
+      uncertainty. An absolute balance is never coloured; only changes are.
+   5. Three weights: 400, 500, 600. Hierarchy comes from size and colour step.
+      Nothing is 700.
    ========================================================================== */
 
 :root {
-  /* Fonts */
-  --af-font-sans: var(--font-af-sans, ui-sans-serif, system-ui, -apple-system);
-  --af-font-mono: var(--font-af-mono, ui-monospace, SFMono-Regular, Menlo, Monaco);
+  /* ---- Neutral ramp -----------------------------------------------------
+     Twelve steps with fixed semantic roles, authored in OKLCH on a single
+     lightness curve so each step is perceptually one notch from the last.
+     Tinted toward the accent hue at very low chroma — pure greys read as a
+     wireframe. */
+  --n1:  oklch(0.995 0.002 264);  /* raised background            */
+  --n2:  oklch(0.984 0.003 264);  /* app canvas                   */
+  --n3:  oklch(0.966 0.004 264);  /* sunken: table head, wells    */
+  --n4:  oklch(0.953 0.005 264);  /* component hover              */
+  --n5:  oklch(0.938 0.006 264);  /* component active / selected  */
+  --n6:  oklch(0.918 0.007 264);  /* subtle border, separators    */
+  --n7:  oklch(0.888 0.009 264);  /* element border               */
+  --n8:  oklch(0.818 0.011 264);  /* strong border, hover         */
+  --n9:  oklch(0.645 0.014 264);  /* muted glyphs, null dashes    */
+  --n10: oklch(0.605 0.015 264);  /* muted glyphs, hover          */
+  --n11: oklch(0.505 0.016 264);  /* secondary text               */
+  --n12: oklch(0.235 0.014 264);  /* primary text                 */
 
-  /* Spacing (4px rhythm) */
-  --af-space-1: 4px;
-  --af-space-2: 8px;
-  --af-space-3: 12px;
-  --af-space-4: 16px;
-  --af-space-5: 24px;
-  --af-space-6: 32px;
-  --af-space-7: 48px;
-  --af-space-8: 64px;
-  --af-space-section: 96px;
+  --canvas: var(--n2);
+  --surface: #ffffff;
+  --sunken: var(--n3);
+  --raised: #ffffff;
 
-  /* Radius */
-  --af-radius-1: 6px; /* inputs */
-  --af-radius-2: 8px; /* buttons */
-  --af-radius-3: 12px; /* cards / panels */
-  --af-radius-pill: 9999px;
+  --text: var(--n12);
+  --text-2: var(--n11);
+  --text-3: var(--n9);
 
-  /* Motion */
-  --af-motion-fast: 150ms;
-  --af-motion-base: 200ms;
-  --af-motion-slow: 320ms;
-  --af-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  /* Borders as alpha, so they composite correctly over canvas and surface. */
+  --hairline: rgba(15, 20, 34, 0.055);
+  --border: rgba(15, 20, 34, 0.095);
+  --border-strong: rgba(15, 20, 34, 0.17);
 
-  /* Surfaces */
-  --af-canvas: #f7f9fc;
-  --af-surface: #ffffff;
-  --af-surface-2: #f1f5fb;
-  --af-border: rgba(15, 23, 42, 0.12);
-  --af-border-2: rgba(15, 23, 42, 0.08);
+  /* ---- Accent: one colour, used sparingly ---- */
+  --accent: oklch(0.505 0.176 266);
+  --accent-hover: oklch(0.455 0.176 266);
+  --accent-soft: oklch(0.505 0.176 266 / 0.08);
+  --accent-line: oklch(0.505 0.176 266 / 0.28);
+  --on-accent: #ffffff;
 
-  /* Text */
-  --af-text: #0b1220;
-  --af-text-2: rgba(11, 18, 32, 0.68);
-  --af-text-3: rgba(11, 18, 32, 0.52);
+  /* ---- Semantics, matched to one lightness and chroma envelope so they
+          read as a family rather than as a traffic light ---- */
+  --pos: oklch(0.515 0.108 158);
+  --pos-soft: oklch(0.515 0.108 158 / 0.09);
+  --neg: oklch(0.515 0.158 27);
+  --neg-soft: oklch(0.515 0.158 27 / 0.085);
+  --warn: oklch(0.545 0.115 62);
+  --warn-soft: oklch(0.545 0.115 62 / 0.10);
 
-  /* Primary action (deep blue, Linear/Stripe-inspired) */
-  --af-primary: #1d4fff;
-  --af-primary-hover: #1a3fe0;
-  --af-primary-pressed: #1633b6;
-  --af-primary-contrast: #ffffff;
+  /* ---- Shadows: tinted, layered, never above 0.16 alpha ---- */
+  --shadow-xs: 0 1px 2px rgba(16, 22, 40, 0.05);
+  --shadow-panel: 0 1px 1px rgba(16, 22, 40, 0.02), 0 2px 6px -2px rgba(16, 22, 40, 0.04);
+  --shadow-pop:
+    0 0 0 1px rgba(16, 22, 40, 0.05),
+    0 4px 8px -2px rgba(16, 22, 40, 0.06),
+    0 12px 32px -8px rgba(16, 22, 40, 0.14);
 
-  /* Confidence + action semantics */
-  --af-confidence: #d97706; /* refined amber */
-  --af-positive: #0f766e; /* deep teal */
-  --af-warning: #b45309;
-  --af-danger: #dc2626;
+  /* ---- Space: 4px base with a 2px escape hatch. No 10, 14 or 18: arbitrary
+          in-between values are what make an interface feel unrhythmic. ---- */
+  --s1: 4px;   --s2: 8px;   --s3: 12px;  --s4: 16px;
+  --s5: 20px;  --s6: 24px;  --s8: 32px;  --s10: 40px;
+  --s12: 48px; --s16: 64px;
 
-  /* Charts (limited + calm) */
-  --af-chart-1: #1d4fff;
-  --af-chart-2: #0ea5e9;
-  --af-chart-3: #7c3aed;
-  --af-chart-4: #ec4899;
+  --r-sm: 4px;   /* inputs, pills, checkboxes */
+  --r-md: 6px;   /* buttons, menu items       */
+  --r-lg: 8px;   /* cards, tables             */
+  --r-xl: 12px;  /* modals, popovers          */
 
-  /* Shadows (soft, premium) */
-  --af-shadow-1: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --af-shadow-2: 0 10px 30px rgba(15, 23, 42, 0.08);
+  /* ---- Motion ------------------------------------------------------------
+     Two speeds, deliberately separated. Feedback the dealer caused — a hover,
+     a press, a value changing — is near-instant, because a tool used six hours
+     a day must never feel like it is waiting. Motion the dealer did not cause —
+     a page arriving, a panel opening — is slower and softer, because that is
+     what reads as considered rather than abrupt.
 
-  /* Focus ring */
-  --af-focus: rgba(29, 79, 255, 0.22);
+     Everything decelerates. Nothing overshoots: a spring implies playfulness,
+     which implies the number might be approximate. */
+  --t-hover: 130ms;
+  --t-enter: 180ms;
+  --t-exit: 120ms;
+  --t-modal: 240ms;
+  --t-page: 420ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  --row-h: 36px;
+  --sidebar-w: 236px;
+
+  --font-sans: var(--font-af-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
-html[data-theme="dark"] {
-  --af-canvas: #0b0f1a;
-  --af-surface: rgba(255, 255, 255, 0.06);
-  --af-surface-2: rgba(255, 255, 255, 0.1);
-  --af-border: rgba(255, 255, 255, 0.12);
-  --af-border-2: rgba(255, 255, 255, 0.08);
-
-  --af-text: rgba(255, 255, 255, 0.93);
-  --af-text-2: rgba(255, 255, 255, 0.72);
-  --af-text-3: rgba(255, 255, 255, 0.58);
-
-  --af-primary: #5e6ad2; /* slightly lighter for dark canvases */
-  --af-primary-hover: #4e5bc1;
-  --af-primary-pressed: #3d47a8;
-  --af-primary-contrast: #071022;
-
-  --af-confidence: #f59e0b;
-  --af-positive: #14b8a6;
-  --af-warning: #f59e0b;
-  --af-danger: #f87171;
-
-  --af-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.25);
-  --af-shadow-2: 0 12px 34px rgba(0, 0, 0, 0.35);
-
-  --af-focus: rgba(94, 106, 210, 0.25);
-}
+* { box-sizing: border-box; min-width: 0; }
+html, body { height: 100%; }
 
 body {
-  background: var(--af-canvas);
-  color: var(--af-text);
-  font-family: var(--af-font-sans);
-  text-rendering: optimizeLegibility;
+  margin: 0;
+  background: var(--canvas);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-synthesis-weight: none;
 }
 
-/* Visible, premium focus for keyboard users */
+/* Focus: a solid ring with a white spacer so it reads on canvas and on
+   surface alike. Never animated — animate the element, not the ring. */
 :focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px var(--af-focus);
-  border-radius: 6px;
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
+  border-radius: var(--r-sm);
 }
 
-/* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  * {
-    scroll-behavior: auto !important;
-    transition-duration: 0ms !important;
-    animation-duration: 0ms !important;
+  *, *::before, *::after {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transform: none !important;
   }
 }
 
-/* ========================================================================
-   Typography utility classes (kept explicit so screens inherit rhythm)
-   ======================================================================== */
-.af-display {
-  font-size: 56px;
-  line-height: 1.05;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+/* ==========================================================================
+   Numerals
+
+   Tabular figures are applied only where numbers live — tables, metrics,
+   inputs. Switching them on globally makes running prose look typewritten.
+   ========================================================================== */
+
+.num {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
-.af-h1 {
-  font-size: 32px;
-  line-height: 1.1;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-.af-h2 {
-  font-size: 24px;
-  line-height: 1.15;
-  font-weight: 700;
-  letter-spacing: -0.015em;
-}
-
-.af-title {
-  font-size: 16px;
-  line-height: 1.25;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.af-body {
-  font-size: 15px;
-  line-height: 1.6;
-  font-weight: 500;
-  letter-spacing: 0;
-}
-
-.af-label {
-  font-size: 12px;
-  line-height: 1.3;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  color: var(--af-text-2);
-}
-
-.af-caption {
-  font-size: 13px;
-  line-height: 1.4;
-  font-weight: 500;
-  color: var(--af-text-2);
-}
-
-.af-mono {
-  font-family: var(--af-font-mono);
-}
-
-/* ========================================================================
-   Surface primitives
-   ======================================================================== */
-.af-card {
-  background: var(--af-surface);
-  border: 1px solid var(--af-border-2);
-  border-radius: var(--af-radius-3);
-  box-shadow: var(--af-shadow-1);
-}
-
-.af-elev-1 {
-  box-shadow: var(--af-shadow-2);
+/* The currency code steps back so the digits carry the eye. */
+.cur {
+  font-size: 0.82em;
+  font-weight: 400;
+  color: var(--text-3);
+  margin-right: 0.28em;
 }
 
 /* ==========================================================================
-   Component base styles
+   Type
    ========================================================================== */
 
-* {
-  box-sizing: border-box;
+.t-display { font-size: 36px; line-height: 1.08; font-weight: 500; letter-spacing: -0.022em; }
+.t-h1      { font-size: 20px; line-height: 1.25; font-weight: 600; letter-spacing: -0.015em; margin: 0; }
+.t-h2      { font-size: 14px; line-height: 1.3;  font-weight: 600; letter-spacing: -0.006em; margin: 0; }
+.t-body    { font-size: 13px; line-height: 1.55; color: var(--text-2); margin: 0; }
+.t-sm      { font-size: 12px; line-height: 1.45; color: var(--text-2); }
+.t-xs      { font-size: 11px; line-height: 1.4;  color: var(--text-3); letter-spacing: 0.005em; }
+
+/* Sentence case, not all-caps: at 11px, capitals lose their shape. */
+.t-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0;
 }
 
-html,
-body {
-  height: 100%;
-}
+.t-strong { color: var(--text); font-weight: 500; }
+.t-pos { color: var(--pos); }
+.t-neg { color: var(--neg); }
+.t-muted { color: var(--text-3); }
 
-.af-app {
+/* ==========================================================================
+   Shell: sidebar on canvas, content on surface. This single step does more
+   work than any shadow.
+   ========================================================================== */
+
+.shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
   min-height: 100%;
 }
 
-.af-topbar {
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  padding: var(--s3) var(--s3) var(--s4);
+  background: var(--canvas);
+  border-right: 1px solid var(--hairline);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  height: 40px;
+  padding: 0 var(--s2);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.brand__mark {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: var(--accent);
+  position: relative;
+  flex: none;
+}
+
+.brand__mark::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 6px;
+  height: 1.5px;
+  border-radius: 2px;
+  background: var(--on-accent);
+}
+
+.brand__mark::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 8px;
+  top: 10px;
+  height: 1.5px;
+  border-radius: 2px;
+  background: var(--on-accent);
+  opacity: 0.6;
+}
+
+.nav { display: flex; flex-direction: column; gap: 2px; }
+
+.nav__section {
+  padding: var(--s4) var(--s2) var(--s1);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--text-3);
+}
+
+.nav__item {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  height: 30px;
+  padding: 0 var(--s2);
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--text-2);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--t-hover) var(--ease-soft),
+    color var(--t-hover) var(--ease-soft),
+    transform var(--t-exit) var(--ease-soft);
+}
+
+.nav__item:hover { background: var(--n4); color: var(--text); }
+.nav__item:active { transform: translateY(0.5px); }
+
+/* Active is a surface tint plus an accent glyph — not a solid accent fill,
+   which is the template pattern. */
+.nav__item[aria-current="page"] {
+  background: var(--n5);
+  color: var(--text);
+}
+
+.nav__item[aria-current="page"] .nav__icon { color: var(--accent); }
+
+.nav__icon { width: 16px; height: 16px; flex: none; color: var(--text-3); }
+
+.nav__count {
+  margin-left: auto;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A count is only accent-coloured when it is a queue the dealer must clear. */
+.nav__count--action { color: var(--accent); }
+
+.sidebar__spacer { flex: 1; }
+
+.sidebar__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: var(--s3);
+  border-top: 1px solid var(--hairline);
+}
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-3);
+  font-family: inherit;
+}
+
+/* ==========================================================================
+   Content
+   ========================================================================== */
+
+.main {
+  background: var(--surface);
+  border-left: 1px solid var(--hairline);
+  min-width: 0;
+}
+
+.topbar {
   position: sticky;
   top: 0;
   z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--af-space-4) var(--af-space-6);
-  background: rgba(247, 249, 252, 0.86);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--af-border-2);
+  gap: var(--s4);
+  height: 52px;
+  padding: 0 var(--s6);
+  background: var(--surface);
+  border-bottom: 1px solid var(--hairline);
 }
 
-html[data-theme="dark"] .af-topbar {
-  background: rgba(11, 15, 26, 0.78);
+.topbar__title { display: flex; align-items: baseline; gap: var(--s3); }
+
+.page { padding: var(--s6) var(--s6) var(--s16); }
+
+.stack-2 { display: flex; flex-direction: column; gap: var(--s2); }
+.stack-3 { display: flex; flex-direction: column; gap: var(--s3); }
+.stack-4 { display: flex; flex-direction: column; gap: var(--s4); }
+.stack-6 { display: flex; flex-direction: column; gap: var(--s6); }
+.stack-8 { display: flex; flex-direction: column; gap: var(--s8); }
+
+.row { display: flex; align-items: center; gap: var(--s3); }
+.row--between { justify-content: space-between; }
+.row--baseline { align-items: baseline; }
+.wrap { flex-wrap: wrap; }
+
+.section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s3);
 }
 
-.af-topbar__left {
+/* ==========================================================================
+   Panels — bordered, not shadowed
+   ========================================================================== */
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  transition: border-color var(--t-enter) var(--ease-soft);
+}
+
+.panel__head {
   display: flex;
   align-items: center;
-  gap: var(--af-space-6);
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--hairline);
 }
 
-.af-logo {
+.panel__body { padding: var(--s4); }
+.panel__body--flush { padding: 0; }
+
+/* ==========================================================================
+   Metric tiles: label, figure, prior period beneath
+   ========================================================================== */
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: var(--s3);
+}
+
+.metric {
+  padding: var(--s3) var(--s4) var(--s4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
   display: flex;
-  align-items: center;
-  gap: var(--af-space-2);
+  flex-direction: column;
+  gap: var(--s1);
+  transition: border-color var(--t-enter) var(--ease-soft);
 }
 
-.af-logo__mark {
-  width: 18px;
+.metric:hover { border-color: var(--border-strong); }
+
+.metric__label { font-size: 11.5px; font-weight: 500; color: var(--text-3); }
+
+.metric__value {
+  font-size: 26px;
+  line-height: 1.15;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text);
+}
+
+.metric__value--sm { font-size: 20px; }
+.metric__sub { font-size: 11.5px; color: var(--text-3); }
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  height: 32px;
+  padding: 0 var(--s3);
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-2);
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color var(--t-hover) var(--ease-soft),
+    border-color var(--t-hover) var(--ease-soft),
+    color var(--t-hover) var(--ease-soft),
+    transform var(--t-exit) var(--ease-soft);
+}
+
+.btn:active { transform: translateY(0.5px); }
+
+.btn--primary { background: var(--accent); color: var(--on-accent); }
+.btn--primary:hover { background: var(--accent-hover); }
+
+.btn--outline { border-color: var(--border); color: var(--text); background: var(--surface); }
+.btn--outline:hover { border-color: var(--border-strong); }
+
+.btn--quiet:hover { background: var(--n4); color: var(--text); }
+
+.btn--sm { height: 26px; padding: 0 var(--s2); font-size: 12px; }
+
+/* ==========================================================================
+   Form controls
+   ========================================================================== */
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field__label { font-size: 11.5px; font-weight: 500; color: var(--text-3); }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
+
+.input, .select {
+  width: 100%;
+  height: 32px;
+  padding: 0 var(--s3);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  transition:
+    border-color var(--t-hover) var(--ease-soft),
+    box-shadow var(--t-hover) var(--ease-soft);
+}
+
+.input:hover, .select:hover { border-color: var(--border-strong); }
+
+.input:focus, .select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.select {
+  appearance: none;
+  padding-right: var(--s8);
+  cursor: pointer;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 16px) 14px, calc(100% - 11px) 14px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--r-md);
+  background: var(--sunken);
+  border: 1px solid var(--hairline);
+}
+
+.segmented__item {
+  height: 26px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-2);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color var(--t-hover) var(--ease-soft),
+    color var(--t-hover) var(--ease-soft);
+}
+
+.segmented__item:hover { color: var(--text); }
+
+.segmented__item[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-xs);
+}
+
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
   height: 18px;
-  border-radius: 6px;
-  background: linear-gradient(135deg, var(--af-primary) 0%, #7c3aed 100%);
-  box-shadow: 0 8px 30px rgba(29, 79, 255, 0.22);
+  background: transparent;
+  cursor: pointer;
 }
 
-.af-logo__text {
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
+.slider::-webkit-slider-runnable-track { height: 3px; border-radius: 999px; background: var(--n6); }
+.slider::-moz-range-track { height: 3px; border-radius: 999px; background: var(--n6); }
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5.5px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+  box-shadow: var(--shadow-xs);
 }
 
-.af-region {
+.slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+}
+
+/* ==========================================================================
+   Tables — 36px rows, horizontal separators only, no striping
+   ========================================================================== */
+
+.table-wrap { overflow-x: auto; }
+
+.table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+
+.table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 34px;
+  padding: 0 var(--s3);
+  text-align: left;
+  white-space: nowrap;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-3);
+  background: var(--sunken);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.table th:first-child, .table td:first-child { padding-left: var(--s4); }
+.table th:last-child, .table td:last-child { padding-right: var(--s4); }
+
+.table td {
+  height: var(--row-h);
+  padding: 0 var(--s3);
+  border-bottom: 1px solid var(--hairline);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.table tbody tr:last-child td { border-bottom: 0; }
+/* Instant on enter, gentle on exit. The asymmetry is what stops a data table
+   from feeling like it snaps at you as the pointer travels across it. */
+.table tbody tr { transition: background-color var(--t-exit) var(--ease-soft); }
+.table tbody tr:hover { background: var(--n3); transition-duration: 0ms; }
+
+.td-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.td-strong { color: var(--text); font-weight: 500; }
+.td-muted { color: var(--text-3); }
+
+/* An absent value is an em-dash, never a blank cell — blanks read as a bug. */
+.td-null { color: var(--n9); }
+
+/* ==========================================================================
+   Status pills — four semantics, one shape
+   ========================================================================== */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 21px;
+  padding: 0 7px;
+  border-radius: var(--r-sm);
+  border: 1px solid;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.pill__dot { width: 5px; height: 5px; border-radius: 999px; background: currentColor; flex: none; }
+
+.pill--pos  { color: var(--pos);  background: var(--pos-soft);  border-color: oklch(0.515 0.108 158 / 0.2); }
+.pill--neg  { color: var(--neg);  background: var(--neg-soft);  border-color: oklch(0.515 0.158 27 / 0.2); }
+.pill--warn { color: var(--warn); background: var(--warn-soft); border-color: oklch(0.545 0.115 62 / 0.22); }
+.pill--calm { color: var(--text-2); background: var(--n3); border-color: var(--hairline); }
+.pill--accent { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-line); }
+
+/* ==========================================================================
+   Decision headline
+   ========================================================================== */
+
+.decision {
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.decision__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s5);
+  flex-wrap: wrap;
+  padding: var(--s5) var(--s5) var(--s4);
+}
+
+.decision__figure { display: flex; align-items: baseline; gap: 2px; }
+
+.decision__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  border-top: 1px solid var(--hairline);
+}
+
+.decision__stat {
+  padding: var(--s3) var(--s4) var(--s4);
+  border-right: 1px solid var(--hairline);
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.af-region__label {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--af-text-2);
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
+.decision__stat:last-child { border-right: 0; }
+
+.decision__stat-k { font-size: 11.5px; font-weight: 500; color: var(--text-3); }
+
+.decision__stat-v {
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text);
 }
 
-.af-region__value {
-  font-size: 14px;
-  font-weight: 800;
-}
+.decision__stat-n { font-size: 11.5px; color: var(--text-3); }
 
-.af-topbar__right {
-  display: flex;
-  align-items: center;
-  gap: var(--af-space-4);
-}
+/* ==========================================================================
+   Bridge waterfall
+   ========================================================================== */
 
-.af-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--af-radius-2);
-  background: linear-gradient(180deg, var(--af-surface) 0%, var(--af-surface-2) 100%);
-  border: 1px solid var(--af-border-2);
-  box-shadow: var(--af-shadow-1);
-}
-
-.af-ctaInline {
-  height: 36px;
-  padding: 0 var(--af-space-4);
-  border-radius: var(--af-radius-2);
-  background: transparent;
-  border: 1px solid var(--af-border);
-  color: var(--af-text);
-  font-weight: 700;
-  font-size: 14px;
-  transition: background-color var(--af-motion-base) var(--af-ease-standard),
-    border-color var(--af-motion-base) var(--af-ease-standard);
-}
-
-.af-ctaInline:hover {
-  background: rgba(29, 79, 255, 0.06);
-  border-color: rgba(29, 79, 255, 0.22);
-}
-
-.af-bodyGrid {
+.bridge__row {
   display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: var(--af-space-6);
-  padding: var(--af-space-6);
+  grid-template-columns: minmax(160px, 1.3fr) minmax(120px, 2fr) 104px;
+  align-items: center;
+  gap: var(--s4);
+  height: var(--row-h);
+  padding: 0 var(--s4);
+  border-bottom: 1px solid var(--hairline);
+  font-size: 12.5px;
+  color: var(--text-2);
 }
 
-@media (max-width: 980px) {
-  .af-bodyGrid {
-    grid-template-columns: 1fr;
-  }
-}
+.bridge__row:last-child { border-bottom: 0; }
 
-.af-rail {
-  display: flex;
-  flex-direction: column;
-  gap: var(--af-space-2);
-  padding: var(--af-space-4);
-  border: 1px solid var(--af-border-2);
-  border-radius: var(--af-radius-3);
-  background: rgba(255, 255, 255, 0.6);
-  box-shadow: var(--af-shadow-1);
-}
-
-html[data-theme="dark"] .af-rail {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.af-railItem {
+.bridge__row--total {
   height: 44px;
+  background: var(--sunken);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.bridge__track { position: relative; height: 18px; }
+
+.bridge__bar {
+  position: absolute;
+  top: 5px;
+  height: 8px;
+  border-radius: 2px;
+  transition: left var(--t-modal) var(--ease-out), width var(--t-modal) var(--ease-out);
+}
+
+.bridge__bar--base   { background: var(--n8); }
+.bridge__bar--cost   { background: oklch(0.515 0.158 27 / 0.45); }
+.bridge__bar--margin { background: oklch(0.515 0.108 158 / 0.5); }
+.bridge__bar--total  { background: var(--accent); }
+
+.bridge__value {
+  text-align: right;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   Charts — no vertical gridlines, no legend, direct labels
+   ========================================================================== */
+
+.chart { width: 100%; height: auto; display: block; overflow: visible; }
+.chart__grid { stroke: rgba(15, 20, 34, 0.05); stroke-width: 1; }
+.chart__axis {
+  fill: var(--text-3);
+  font-size: 10.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.chart__line { fill: none; stroke: var(--accent); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.chart__area { fill: var(--accent); opacity: 0.07; }
+.chart__point { fill: var(--surface); stroke: var(--accent); stroke-width: 1.75; }
+.chart__point--active { fill: var(--accent); }
+.chart__marker { stroke: var(--n8); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart__hit { fill: transparent; cursor: pointer; }
+
+
+
+/* ==========================================================================
+   Queue rows — one decision per row, action revealed on hover
+   ========================================================================== */
+
+.queue { display: flex; flex-direction: column; }
+
+.queue__row {
+  display: grid;
+  grid-template-columns: 22px minmax(190px, 1.6fr) minmax(160px, 1.5fr) 128px 116px;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 52px;
+  padding: var(--s2) var(--s4);
+  border-bottom: 1px solid var(--hairline);
+  text-align: left;
+  background: transparent;
+  border-left: 0; border-right: 0; border-top: 0;
+  width: 100%;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color var(--t-exit) var(--ease-soft);
+}
+
+.queue__row:last-child { border-bottom: 0; }
+.queue__row:hover { background: var(--n3); transition-duration: 0ms; }
+.queue__row:active { background: var(--n4); }
+
+.queue__mark { width: 6px; height: 6px; border-radius: 999px; }
+.queue__mark--neg { background: var(--neg); }
+.queue__mark--warn { background: var(--warn); }
+.queue__mark--pos { background: var(--pos); }
+.queue__mark--calm { background: var(--n8); }
+
+.queue__title { font-size: 13px; font-weight: 500; color: var(--text); }
+.queue__sub { font-size: 11.5px; color: var(--text-3); }
+.queue__num { text-align: right; font-variant-numeric: tabular-nums lining-nums; }
+
+/* ==========================================================================
+   Command palette
+   ========================================================================== */
+
+.cmdk__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(16, 22, 40, 0.24);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 16vh;
+  animation: fade var(--t-enter) ease-out;
+}
+
+.cmdk {
+  width: min(640px, calc(100vw - 32px));
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+  animation: pop var(--t-modal) var(--ease-soft);
+}
+
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop {
+  from { opacity: 0; transform: translateY(-6px) scale(0.99); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ==========================================================================
+   Page entrance
+
+   Content arrives rather than appearing. Small distance, generous duration,
+   short stagger — the effect should be felt and not watched, and it stops
+   after the fourth child so a long page never feels like it is loading in
+   sequence.
+   ========================================================================== */
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.page > * {
+  animation: rise var(--t-page) var(--ease-soft) both;
+}
+
+.page > *:nth-child(1) { animation-delay: 0ms; }
+.page > *:nth-child(2) { animation-delay: 40ms; }
+.page > *:nth-child(3) { animation-delay: 80ms; }
+.page > *:nth-child(n + 4) { animation-delay: 110ms; }
+
+.cmdk__input {
+  width: 100%;
+  height: 50px;
+  padding: 0 var(--s5);
+  border: 0;
+  border-bottom: 1px solid var(--hairline);
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.cmdk__input:focus { outline: none; }
+.cmdk__input::placeholder { color: var(--text-3); }
+
+.cmdk__list { max-height: 320px; overflow-y: auto; padding: var(--s2); }
+
+.cmdk__group {
+  padding: var(--s3) var(--s3) var(--s1);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+}
+
+.cmdk__item {
   display: flex;
   align-items: center;
-  gap: var(--af-space-3);
-  padding: 0 var(--af-space-3);
-  border-radius: var(--af-radius-2);
-  border: 1px solid transparent;
+  gap: var(--s3);
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--s3);
+  border: 0;
+  border-radius: var(--r-md);
   background: transparent;
-  color: var(--af-text-2);
-  font-weight: 800;
-  font-size: 14px;
-  transition: background-color var(--af-motion-base) var(--af-ease-standard),
-    color var(--af-motion-base) var(--af-ease-standard), border-color var(--af-motion-base)
-      var(--af-ease-standard);
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
 }
 
-.af-railItem__dot {
-  width: 10px;
-  height: 10px;
-  border-radius: var(--af-radius-1);
-  background: rgba(29, 79, 255, 0.18);
-}
+.cmdk__item[data-active="true"] { background: var(--n4); }
+.cmdk__item-hint { margin-left: auto; }
 
-.af-railItem--active {
-  color: var(--af-text);
-  border-color: rgba(29, 79, 255, 0.22);
-  background: rgba(29, 79, 255, 0.06);
-}
+/* ==========================================================================
+   Empty and refusal states
+   ========================================================================== */
 
-.af-railItem--active .af-railItem__dot {
-  background: var(--af-primary);
-  box-shadow: 0 10px 30px rgba(29, 79, 255, 0.22);
-}
-
-.af-main {
-  min-height: 500px;
-}
-
-.af-page {
-  max-width: 1040px;
-}
-
-.af-page__intro {
-  margin-bottom: var(--af-space-6);
-}
-
-.af-stack {
+.empty {
+  padding: var(--s12) var(--s6);
   display: flex;
   flex-direction: column;
-  gap: var(--af-space-5);
+  align-items: center;
+  gap: var(--s2);
+  text-align: center;
 }
 
-.af-grid2 {
+.refusal {
+  padding: var(--s8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  align-items: flex-start;
+}
+
+.refusal__mark {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-md);
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: var(--af-space-5);
-}
-
-@media (max-width: 980px) {
-  .af-grid2 {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ==========================================================================
-   Buttons / Links
-   ========================================================================== */
-
-.af-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--af-space-3);
-  border-radius: var(--af-radius-2);
-  border: 1px solid transparent;
-  cursor: pointer;
-  user-select: none;
-  font-weight: 800;
-  transition: transform var(--af-motion-fast) var(--af-ease-standard),
-    background-color var(--af-motion-base) var(--af-ease-standard),
-    border-color var(--af-motion-base) var(--af-ease-standard),
-    opacity var(--af-motion-base) var(--af-ease-standard);
-}
-
-.af-btn:active {
-  transform: translateY(1px);
-}
-
-.af-btn--md {
-  height: 40px;
-  padding: 0 var(--af-space-5);
+  place-items: center;
+  background: var(--warn-soft);
+  color: var(--warn);
+  border: 1px solid oklch(0.545 0.115 62 / 0.22);
   font-size: 14px;
+  font-weight: 600;
 }
 
-.af-btn--lg {
-  height: 46px;
-  padding: 0 var(--af-space-6);
-  font-size: 15px;
-}
+.list { margin: 0; padding-left: var(--s5); display: flex; flex-direction: column; gap: 6px; }
+.list li { font-size: 12.5px; color: var(--text-2); }
 
-.af-btn--disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
+.divider { height: 1px; background: var(--hairline); border: 0; margin: 0; }
 
-.af-btn--primary {
-  background: var(--af-primary);
-  color: var(--af-primary-contrast);
-  box-shadow: 0 14px 34px rgba(29, 79, 255, 0.18);
-}
+/* Meter used for confidence drivers and evidence weights. */
+.meter { display: block; height: 4px; border-radius: 999px; background: var(--n5); overflow: hidden; }
+.meter__fill { display: block; height: 100%; border-radius: 999px; background: var(--n9); }
+.meter__fill--accent { background: var(--accent); }
+.meter__fill--pos { background: var(--pos); }
+.meter__fill--warn { background: var(--warn); }
+.meter__fill--neg { background: var(--neg); }
 
-.af-btn--primary:hover {
-  background: var(--af-primary-hover);
-}
-
-.af-btn--primary:active {
-  background: var(--af-primary-pressed);
-}
-
-.af-btn--secondary {
-  background: rgba(29, 79, 255, 0.07);
-  color: var(--af-text);
-  border-color: rgba(29, 79, 255, 0.18);
-}
-
-.af-btn--secondary:hover {
-  background: rgba(29, 79, 255, 0.11);
-}
-
-.af-btn--ghost {
-  background: transparent;
-  border-color: var(--af-border);
-  color: var(--af-text);
-}
-
-.af-btn--ghost:hover {
-  background: rgba(29, 79, 255, 0.06);
-}
-
-.af-btn--danger {
-  background: rgba(220, 38, 38, 0.08);
-  border-color: rgba(220, 38, 38, 0.18);
-  color: var(--af-text);
-}
-
-.af-btn__icon {
-  display: inline-flex;
-}
-
-.af-btn__label {
-  display: inline-flex;
-  align-items: center;
-}
-
-.af-spinner {
-  width: 16px;
-  height: 16px;
-  border-radius: 9999px;
-  border: 2px solid rgba(255, 255, 255, 0.55);
-  border-top-color: rgba(255, 255, 255, 0.95);
-  animation: af-spin 0.75s linear infinite;
-}
-
-@keyframes af-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.af-linkBtn {
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  color: var(--af-primary);
-  font-weight: 800;
-  padding: 0;
-  font-size: 14px;
-  transition: opacity var(--af-motion-base) var(--af-ease-standard);
-}
-
-.af-linkBtn:hover {
-  opacity: 0.9;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-/* ==========================================================================
-   Card padding variants
-   ========================================================================== */
-
-.af-card--pad-md {
-  padding: var(--af-space-5);
-}
-
-.af-card--pad-lg {
-  padding: var(--af-space-6);
-}
-
-/* ==========================================================================
-   Badge
-   ========================================================================== */
-
-.af-badge {
+.provenance {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
-  border-radius: var(--af-radius-pill);
-  border: 1px solid var(--af-border-2);
-  background: rgba(255, 255, 255, 0.6);
-  font-weight: 900;
-  font-size: 12px;
-  color: var(--af-text-2);
+  font-size: 11px;
+  color: var(--text-3);
 }
 
-html[data-theme="dark"] .af-badge {
-  background: rgba(255, 255, 255, 0.04);
-}
+.provenance__dot { width: 5px; height: 5px; border-radius: 999px; background: var(--warn); flex: none; }
 
-.af-badge--primary {
-  border-color: rgba(29, 79, 255, 0.24);
-  color: var(--af-primary);
-  background: rgba(29, 79, 255, 0.08);
-}
-
-.af-badge--confidence {
-  border-color: rgba(217, 119, 6, 0.22);
-  color: var(--af-confidence);
-  background: rgba(217, 119, 6, 0.10);
-}
-
-.af-badge--positive {
-  border-color: rgba(15, 118, 110, 0.22);
-  color: var(--af-positive);
-  background: rgba(15, 118, 110, 0.10);
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; flex-direction: row; align-items: center; overflow-x: auto; }
+  .sidebar__spacer, .sidebar__foot, .nav__section { display: none; }
+  .nav { flex-direction: row; }
 }
 
 /* ==========================================================================
-   Decision card
+   Appraisal workbench layout
    ========================================================================== */
 
-.af-decision {
-  border-radius: var(--af-radius-3);
-  border: 1px solid var(--af-border-2);
-  background: rgba(255, 255, 255, 0.74);
-  box-shadow: var(--af-shadow-1);
-  padding: var(--af-space-6);
-  transition: box-shadow var(--af-motion-base) var(--af-ease-standard),
-    transform var(--af-motion-fast) var(--af-ease-standard),
-    border-color var(--af-motion-base) var(--af-ease-standard),
-    background-color var(--af-motion-base) var(--af-ease-standard);
-}
-
-html[data-theme="dark"] .af-decision {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.af-decision:hover {
-  box-shadow: var(--af-shadow-2);
-}
-
-.af-decision__eyebrow {
-  margin-bottom: var(--af-space-4);
-}
-
-.af-decision__header {
+.workbench {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: var(--af-space-6);
+  grid-template-columns: 292px minmax(0, 1fr);
+  gap: var(--s4);
   align-items: start;
 }
 
-@media (max-width: 880px) {
-  .af-decision__header {
-    grid-template-columns: 1fr;
-  }
+.workbench__col { display: flex; flex-direction: column; gap: var(--s4); min-width: 0; }
+
+.sticky-col { position: sticky; top: 68px; }
+
+.decision__inner { display: contents; }
+
+.decision__caption {
+  padding: 0 var(--s5) var(--s5);
+  max-width: 68ch;
 }
 
-.af-decision__title {
-  margin: 0 0 var(--af-space-2) 0;
-}
+.decision__stat--pos .decision__stat-v { color: var(--pos); }
+.decision__stat--neg .decision__stat-v { color: var(--neg); }
 
-.af-decision__summary {
-  margin: 0;
-  color: var(--af-text-2);
-  max-width: 58ch;
-}
+.driver { display: grid; grid-template-columns: 1fr 72px; align-items: center; gap: var(--s3); }
 
-.af-decision__meter {
-  display: flex;
-  flex-direction: column;
-  gap: var(--af-space-3);
-  align-items: flex-end;
-}
-
-.af-decision__badge {
-  align-self: flex-end;
-}
-
-.af-conf {
-  width: 100%;
-  max-width: 260px;
-}
-
-.af-conf__top {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: var(--af-space-2);
-}
-
-.af-conf__label {
-  font-size: 12px;
-  font-weight: 900;
-  color: var(--af-text-2);
-  text-transform: uppercase;
-  letter-spacing: 0.01em;
-}
-
-.af-conf__value {
-  font-size: 14px;
-  font-weight: 1000;
-  color: var(--af-text);
-}
-
-.af-conf__track {
-  width: 100%;
-  height: 10px;
-  border-radius: 9999px;
-  border: 1px solid var(--af-border-2);
-  background: rgba(15, 23, 42, 0.04);
-  overflow: hidden;
-}
-
-html[data-theme="dark"] .af-conf__track {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.af-conf__fill {
-  height: 100%;
-  border-radius: 9999px;
-  background: var(--af-confidence);
-  transition: width var(--af-motion-base) var(--af-ease-standard);
-}
-
-.af-conf--positive .af-conf__fill {
-  background: var(--af-positive);
-}
-
-.af-conf--warning .af-conf__fill {
-  background: var(--af-warning);
-}
-
-.af-conf--neutral .af-conf__fill {
-  background: rgba(29, 79, 255, 0.35);
-}
-
-.af-decision__reasons {
-  margin-top: var(--af-space-6);
-  border-top: 1px solid var(--af-border-2);
-  padding-top: var(--af-space-5);
-}
-
-.af-decision__reasonsTitle {
-  font-weight: 1000;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  color: var(--af-text-2);
-  margin-bottom: var(--af-space-3);
-}
-
-.af-decision__reasonsList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--af-space-2);
-}
-
-.af-decision__reason {
-  display: flex;
-  gap: var(--af-space-3);
-  align-items: flex-start;
-  color: var(--af-text);
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.af-decision__reasonIcon {
-  color: var(--af-positive);
-  font-weight: 1000;
-}
-
-.af-decision__actions {
-  margin-top: var(--af-space-6);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--af-space-4);
-}
-
-.af-decision__secondary {
-  display: flex;
-  gap: var(--af-space-4);
+@media (max-width: 1100px) {
+  .workbench { grid-template-columns: 1fr; }
+  .sticky-col { position: static; }
 }
 
 /* ==========================================================================
-   Empty state
+   Phone
+
+   The desktop layout is a two-column shell with a persistent sidebar; a phone
+   gets a compact header and a bottom tab bar, because a dealer using this on a
+   forecourt is holding the phone one-handed and the thumb reaches the bottom.
+
+   Data tables reflow into stacked rows rather than scrolling sideways. A nine
+   column financial table behind a horizontal scrollbar is technically present
+   and practically unreadable.
    ========================================================================== */
 
-.af-empty {
-  border-radius: var(--af-radius-3);
-  border: 1px solid var(--af-border-2);
-  background: rgba(255, 255, 255, 0.62);
-  box-shadow: var(--af-shadow-1);
-  padding: var(--af-space-6);
+.mobilebar,
+.tabbar {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .shell {
+    display: block;
+    min-height: 100%;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .mobilebar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    padding: 0 var(--s4);
+    background: var(--surface);
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .main {
+    border-left: 0;
+    /* Clear the tab bar, plus the home indicator on a modern iPhone. */
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .topbar {
+    top: 52px;
+    height: auto;
+    min-height: 52px;
+    padding: var(--s3) var(--s4);
+    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+
+  .topbar__title { flex-wrap: wrap; gap: var(--s2); }
+
+  /* Provenance and other secondary topbar content is not worth the vertical
+     space on a phone; it is stated again in context where it matters. */
+  .topbar .provenance { display: none; }
+
+  .page { padding: var(--s4) var(--s4) var(--s8); }
+
+  .tabbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    display: grid;
+    /* minmax(0, 1fr), not 1fr: a bare 1fr track refuses to shrink below its
+       content's min-width, so the longest label ("Performance") silently pushes
+       the whole bar wider than the viewport. */
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    background: color-mix(in oklab, var(--surface) 92%, transparent);
+    backdrop-filter: blur(12px) saturate(160%);
+    border-top: 1px solid var(--hairline);
+  }
+
+  .tabbar__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 2px;
+    border-radius: var(--r-md);
+    color: var(--text-3);
+    font-size: 10.5px;
+    font-weight: 500;
+    text-decoration: none;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color var(--t-hover) var(--ease-soft), background-color var(--t-hover) var(--ease-soft);
+  }
+
+  .tabbar__item[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+  .tabbar__item:active { background: var(--n4); }
+
+  .tabbar__icon { position: relative; display: grid; place-items: center; }
+
+  .tabbar__badge {
+    position: absolute;
+    top: -4px;
+    right: -8px;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: 9.5px;
+    font-weight: 600;
+    line-height: 15px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- Metrics: two up, never one. A single tile per row wastes the screen
+     and makes a four-metric header four scrolls long. ---- */
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
+  .metric { padding: var(--s3); }
+  .metric__value { font-size: 20px; }
+  .metric__value--sm { font-size: 18px; }
+
+  /* ---- Queue rows stack ---- */
+  .queue__row {
+    grid-template-columns: 14px minmax(0, 1fr);
+    grid-template-areas:
+      "mark title"
+      ".    verdict"
+      ".    figures";
+    row-gap: var(--s2);
+    padding: var(--s3) var(--s4);
+  }
+
+  .queue__row > :nth-child(1) { grid-area: mark; align-self: start; margin-top: 5px; }
+  .queue__row > :nth-child(2) { grid-area: title; }
+  .queue__row > :nth-child(3) { grid-area: verdict; }
+  .queue__row > :nth-child(4),
+  .queue__row > :nth-child(5) { grid-area: figures; }
+
+  /* The two numeric columns sit side by side under the verdict rather than
+     stacking, so the comparison they exist to make survives. */
+  .queue__row > :nth-child(4) { justify-self: start; text-align: left; }
+  .queue__row > :nth-child(5) { justify-self: end; text-align: right; }
+
+  .queue__num { text-align: inherit; }
+
+  /* ---- Tables become stacked records ---- */
+  .table-wrap { overflow-x: visible; }
+  .table, .table tbody, .table tr, .table td { display: block; width: 100%; }
+  .table thead { display: none; }
+
+  .table tbody tr {
+    padding: var(--s3) var(--s4);
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .table tbody tr:hover { background: transparent; }
+
+  .table td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s3);
+    height: auto;
+    padding: 3px 0;
+    border-bottom: 0;
+    white-space: normal;
+  }
+
+  /* The column header travels with the cell, so a stacked record still says
+     what each figure is. */
+  .table td::before {
+    content: attr(data-label);
+    flex: none;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--text-3);
+  }
+
+  .table td:first-child {
+    padding: 0 0 var(--s2);
+    font-size: 13.5px;
+  }
+
+  .table td:first-child::before { content: none; }
+  .table td.td-num { text-align: right; }
+
+  /* ---- Bridge ---- */
+  .bridge__row { grid-template-columns: minmax(0, 1fr) 96px; gap: var(--s3); }
+  .bridge__track { display: none; }
+
+  /* ---- Decision ---- */
+  .decision__top { padding: var(--s4); }
+  .decision__caption { padding: 0 var(--s4) var(--s4); }
+  .decision__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .decision__stat { border-right: 0; border-bottom: 1px solid var(--hairline); }
+  .t-display { font-size: 30px; }
+
+  .driver { grid-template-columns: minmax(0, 1fr) 56px; }
+}
+
+/* Only the narrowest phones fall back to a single column. At 390px two tiles
+   still fit comfortably, and one-up turns a four-metric header into four
+   screens of scrolling. */
+@media (max-width: 359px) {
+  .metrics { grid-template-columns: 1fr; }
+  .decision__stats { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 460px) {
+  .tabbar__item { font-size: 10px; }
+  .metric { padding: var(--s3) var(--s3) var(--s3); gap: 2px; }
+  .metric__sub { font-size: 11px; }
+}
+
+/* ==========================================================================
+   Appraisal on a phone
+
+   On a desktop the inputs sit beside the answer and both are visible at once.
+   Stacked on a phone, the naive order buries the answer under two panels of
+   controls — so the dealer standing in front of a customer scrolls past
+   everything they already know to reach the one number they opened the app for.
+
+   `display: contents` dissolves the two columns so the panels can be resequenced
+   individually: describe the car, get the answer, then adjust the assumptions
+   underneath it.
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .workbench {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+  }
+
+  .workbench__col {
+    display: contents;
+  }
+
+  .wb-vehicle { order: 1; }
+
+  /* The decision headline — first child of the results column. */
+  .workbench__col:last-child > *:first-child { order: 2; }
+
+  .wb-economics { order: 3; }
+
+  /* Bridge, chart, confidence, evidence: the working, in order, underneath. */
+  .workbench__col:last-child > *:not(:first-child) { order: 4; }
+}
+
+/* ==========================================================================
+   Visual encoding
+
+   The eye judges position and length far more accurately than colour or area,
+   and it does both before it reads a word. Everything below exists to move the
+   important quantities onto those two channels, so a dealer can rank a screen
+   at a glance and only read the rows that matter.
+   ========================================================================== */
+
+/* ---- Price ladder ------------------------------------------------------- */
+
+.ladder { margin: 0; }
+.ladder__svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+.ladder__band--pos  { fill: oklch(0.515 0.108 158 / 0.16); }
+.ladder__band--warn { fill: oklch(0.545 0.115 62 / 0.16); }
+.ladder__band--neg  { fill: oklch(0.515 0.158 27 / 0.13); }
+
+.ladder__rule { stroke-linecap: round; }
+.ladder__rule--ceiling { stroke: var(--accent); stroke-width: 2.5; }
+.ladder__rule--walk { stroke: var(--neg); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.ladder__rule--ask { stroke-width: 1.5; }
+.ladder__rule--ask.ladder__rule--pos { stroke: var(--pos); }
+.ladder__rule--ask.ladder__rule--warn { stroke: var(--warn); }
+.ladder__rule--ask.ladder__rule--neg { stroke: var(--neg); }
+
+/* A 2px surface ring keeps the marker legible wherever it lands, including
+   directly on a band edge. */
+.ladder__ask { stroke: var(--surface); stroke-width: 2.5; }
+.ladder__ask--pos { fill: var(--pos); }
+.ladder__ask--warn { fill: var(--warn); }
+.ladder__ask--neg { fill: var(--neg); }
+
+.ladder__retail { fill: var(--n9); stroke: var(--surface); stroke-width: 2; }
+
+.ladder__label { fill: var(--text-3); font-size: 11px; font-weight: 500; text-anchor: middle; }
+.ladder__label--ceiling { fill: var(--accent); }
+
+.ladder__value {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-anchor: middle;
+  font-variant-numeric: tabular-nums;
+}
+
+.ladder__value--pos { fill: var(--pos); }
+.ladder__value--warn { fill: var(--warn); }
+.ladder__value--neg { fill: var(--neg); }
+
+.ladder__legend {
   display: flex;
-  flex-direction: column;
-  gap: var(--af-space-5);
-  align-items: flex-start;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s4);
+  margin: var(--s3) 0 0;
+  font-size: 11.5px;
+  color: var(--text-3);
 }
 
-html[data-theme="dark"] .af-empty {
-  background: rgba(255, 255, 255, 0.04);
+.ladder__legend-item, .ladder__legend-retail { display: inline-flex; align-items: center; gap: 6px; }
+.ladder__legend-swatch { width: 10px; height: 10px; border-radius: 3px; }
+.ladder__legend-swatch--pos  { background: oklch(0.515 0.108 158 / 0.3); }
+.ladder__legend-swatch--warn { background: oklch(0.545 0.115 62 / 0.3); }
+.ladder__legend-swatch--neg  { background: oklch(0.515 0.158 27 / 0.25); }
+.ladder__legend-diamond { width: 8px; height: 8px; background: var(--n9); transform: rotate(45deg); }
+
+/* ---- Bullet ------------------------------------------------------------- */
+
+.bullet { display: block; width: 100%; min-width: 56px; }
+
+.bullet__track {
+  position: relative;
+  display: block;
+  height: 8px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--n3);
 }
 
-.af-empty__icon {
-  width: 42px;
-  height: 42px;
-  border-radius: var(--af-radius-2);
-  background: rgba(29, 79, 255, 0.08);
-  border: 1px solid rgba(29, 79, 255, 0.18);
+/* One hue, light to dark. Green-amber-red bands would turn every row into a
+   traffic light and drown the one thing that is deliberately coloured. */
+.bullet__band { position: absolute; top: 0; bottom: 0; left: 0; background: var(--n4); }
+.bullet__band--mid { background: var(--n6); }
+.bullet__band--high { background: var(--n8); }
+
+.bullet__marker {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2.5px;
+  margin-left: -1.25px;
+  border-radius: 2px;
+  background: var(--text);
+  box-shadow: 0 0 0 1.5px var(--surface);
+}
+
+.bullet__marker--warn { background: var(--warn); }
+.bullet__marker--neg { background: var(--neg); }
+
+/* ---- Magnitude ---------------------------------------------------------- */
+
+.magnitude {
+  display: block;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--n4);
+  overflow: hidden;
+}
+
+.magnitude__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width var(--t-modal) var(--ease-soft);
+}
+
+.magnitude__fill--accent { background: var(--accent); }
+.magnitude__fill--pos { background: var(--pos); }
+.magnitude__fill--neg { background: var(--neg); }
+.magnitude__fill--warn { background: var(--warn); }
+
+/* ---- Sparkline ---------------------------------------------------------- */
+
+.spark { display: block; overflow: visible; }
+.spark__line { fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.spark__line--muted { stroke: var(--n9); }
+.spark__line--pos { stroke: var(--pos); }
+.spark__line--neg { stroke: var(--neg); }
+.spark__dot--muted { fill: var(--n9); }
+.spark__dot--pos { fill: var(--pos); }
+.spark__dot--neg { fill: var(--neg); }
+
+/* ==========================================================================
+   Queue, rebuilt around hierarchy
+
+   Five pieces of information in a row need one dominant element or the eye has
+   nowhere to land. The subject is 14.5px/600, the money at stake 17px, and
+   everything else drops to 11–12px in a muted step. Repeated per-row labels
+   ("now", "return on capital") move up into a header stated once.
+   ========================================================================== */
+
+.queue { --queue-cols: 20px minmax(170px, 1.4fr) minmax(150px, 1.15fr) 124px 148px; }
+
+.queue__header {
+  display: grid;
+  grid-template-columns: var(--queue-cols);
+  gap: var(--s3);
+  padding: var(--s2) var(--s4);
+  border-bottom: 1px solid var(--hairline);
+  background: var(--sunken);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+.queue__row { grid-template-columns: var(--queue-cols); min-height: 56px; }
+
+/* Severity as shape plus colour, never colour alone: a filled triangle for act
+   now, a filled dot for watch, a hollow dot for fine. The list is sorted by
+   money at stake, so vertical position already carries the ranking and a number
+   badge would only restate it in text. */
+.queue__sev {
   display: grid;
   place-items: center;
-  color: var(--af-primary);
-  font-size: 18px;
+  width: 14px;
+  height: 14px;
+  color: var(--n8);
 }
 
-.af-empty__text {
+.queue__sev--neg { color: var(--neg); }
+.queue__sev--warn { color: var(--warn); }
+.queue__sev--pos { color: var(--pos); }
+
+/* The ladder is 11 / 12.5 / 15 / 20, and the large step sits between the
+   supporting text and the decision number rather than being spread evenly.
+   An even scale is precisely what produces a screen where nothing dominates. */
+.queue__title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
+.queue__sub { font-size: 11.5px; color: var(--text-3); }
+
+.queue__stake {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  /* Proportional figures: tabular gives every digit the width of a zero, which
+     reads loose at display sizes. Tabular is for columns, not for headlines. */
+  color: var(--text);
+}
+
+.queue__stake--neg { color: var(--neg); }
+.queue__stake--pos { color: var(--pos); }
+
+/* A price change reads as one movement, not two unrelated numbers. */
+.pricemove { display: inline-flex; align-items: baseline; gap: 5px; font-variant-numeric: tabular-nums; }
+.pricemove__from { font-size: 12px; color: var(--text-3); text-decoration: line-through; }
+.pricemove__arrow { font-size: 11px; color: var(--text-3); }
+.pricemove__to { font-size: 13.5px; font-weight: 600; color: var(--text); }
+
+@media (max-width: 900px) {
+  .queue__header { display: none; }
+  .queue { --queue-cols: 20px minmax(0, 1fr); }
+  .ladder__legend { gap: var(--s3); font-size: 11px; }
+}
+
+.decision__ladder { padding: var(--s2) var(--s5) var(--s5); }
+
+@media (max-width: 900px) {
+  .decision__ladder { padding: 0 var(--s4) var(--s4); }
+}
+
+/* Column-header micro-axis: the scale for an in-cell bullet is stated once,
+   here, instead of repeated as text in forty rows. */
+.cell-viz { display: flex; flex-direction: column; gap: 5px; min-width: 74px; }
+.cell-viz--end { align-items: flex-end; }
+.cell-viz__num { font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--text); }
+.cell-viz--end .cell-viz__num { text-align: right; }
+
+.th-axis {
   display: flex;
-  flex-direction: column;
-  gap: var(--af-space-3);
+  justify-content: space-between;
+  gap: var(--s2);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--n8);
+  margin-top: 2px;
 }
 
-.af-empty__actions {
-  width: 100%;
+.td-age { min-width: 96px; }
+
+@media (max-width: 900px) {
+  .th-axis { display: none; }
+  .cell-viz { min-width: 0; width: 100%; }
+  .queue__stake { font-size: 18px; }
 }
 
-.af-primaryLink {
-  height: 44px;
-  border-radius: var(--af-radius-2);
-  padding: 0 var(--af-space-5);
-  background: rgba(29, 79, 255, 0.07);
-  border: 1px solid rgba(29, 79, 255, 0.18);
-  color: var(--af-primary);
-  font-weight: 1000;
-  cursor: pointer;
-  transition: background-color var(--af-motion-base) var(--af-ease-standard),
-    border-color var(--af-motion-base) var(--af-ease-standard);
+/* ---- Stock triage matrix ------------------------------------------------ */
+
+.matrix { margin: 0; }
+.matrix__svg { width: 100%; height: auto; display: block; }
+
+.matrix__problem { fill: oklch(0.515 0.158 27 / 0.045); }
+.matrix__split { stroke: var(--n7); stroke-width: 1; stroke-dasharray: 3 3; }
+.matrix__zero { stroke: var(--n8); stroke-width: 1; }
+
+/* Every dot carries a surface ring; without it, overlapping cars merge into a
+   single blob and the count is lost. */
+.matrix__dot {
+  fill: var(--n8);
+  fill-opacity: 0.8;
+  stroke: var(--surface);
+  stroke-width: 2;
 }
 
-.af-primaryLink:hover {
-  background: rgba(29, 79, 255, 0.11);
-  border-color: rgba(29, 79, 255, 0.24);
+.matrix__dot--problem { fill: var(--neg); fill-opacity: 0.85; }
+
+.matrix__label { fill: var(--text-2); font-size: 10.5px; font-weight: 500; }
+.matrix__axis { fill: var(--text-3); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.matrix__quadrant { fill: var(--n8); font-size: 11px; font-weight: 500; }
+
+.matrix__caption {
+  margin: var(--s3) 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-3);
+  max-width: 72ch;
 }
 
+@media (max-width: 900px) {
+  /* The age cell reserves width for its bullet on a desktop grid; stacked, the
+     reservation is what pushes the row past the viewport. */
+  .td-age { min-width: 0; }
+  .table td { flex-wrap: wrap; }
+  .cell-viz { flex: 1 1 100%; min-width: 0; }
+  .matrix__svg { min-width: 0; }
+}
+
+@media (max-width: 900px) {
+  /* An over-constrained fixed box still refuses to go below its content's
+     min-width, so the tab bar is pinned to the viewport explicitly and the
+     labels are allowed to truncate rather than push the bar wider than the
+     screen. */
+  /* Flex rather than grid.
+     Grid tracks kept refusing to drop below the widest label's intrinsic width
+     even at minmax(0, 1fr), which pushed the bar past the viewport; flex items
+     shrink by default once min-width is zeroed. Pinned to both edges rather
+     than sized with 100vw, because viewport units include the scrollbar and
+     reintroduce the overflow they were meant to fix. */
+  .tabbar {
+    left: 0;
+    right: 0;
+    width: auto;
+    min-width: 0;
+    display: flex;
+    overflow: hidden;
+  }
+
+  .tabbar__item {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+/* ---- Grounds: explanations, not statuses -------------------------------- */
+
+.grounds { margin: 0; }
+
+.grounds__row {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: var(--s4);
+  padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.grounds__row:last-child { border-bottom: 0; }
+.grounds__subject { font-size: 12.5px; font-weight: 500; color: var(--text); }
+.grounds__reasons { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--text-2); }
+
+@media (max-width: 900px) {
+  .grounds__row { grid-template-columns: 1fr; gap: 4px; }
+}
+
+.toggle { display: flex; align-items: center; gap: var(--s2); font-size: 12.5px; color: var(--text-2); cursor: pointer; }
+.toggle input { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }

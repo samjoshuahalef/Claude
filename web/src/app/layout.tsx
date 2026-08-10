@@ -1,31 +1,40 @@
 import type { Metadata } from "next";
-import { Inter, Inter_Tight } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import { Shell } from "@/components/shell/Shell";
+import { getWorkspace } from "@/lib/data/workspace";
 
 const inter = Inter({
   variable: "--font-af-sans",
   subsets: ["latin"],
-});
-
-// Slightly tighter for compact UI labels and vehicle identifiers.
-const interTight = Inter_Tight({
-  variable: "--font-af-mono",
-  subsets: ["latin"],
+  display: "swap",
+  /* Three weights, and nothing heavier. Hierarchy comes from size and colour
+     step; a 700 in a dense financial interface always reads as shouting. */
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
-  title: "AutoFlair.ai",
+  title: "Autoflair",
   description:
-    "AI operating system for premium car dealers — Switzerland first, Europe soon.",
+    "Acquisition and stock intelligence for professional car dealers. Every screen answers one question with a number.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const workspace = await getWorkspace();
+
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} ${interTight.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className={inter.variable}>
+      <body>
+        <Shell
+          counts={{
+            actions: workspace.summary.needingAction,
+            opportunities: workspace.opportunities.length,
+            stock: workspace.summary.vehicles,
+          }}
+        >
+          {children}
+        </Shell>
+      </body>
     </html>
   );
 }
