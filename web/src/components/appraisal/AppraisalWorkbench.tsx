@@ -95,7 +95,7 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
   return (
     <div className="workbench">
       <div className="workbench__col sticky-col">
-        <section className="panel">
+        <section className="panel wb-vehicle">
           <header className="panel__head">
             <h2 className="t-h2">Vehicle</h2>
             <span className="t-xs num">
@@ -156,7 +156,7 @@ export function AppraisalWorkbench({ bundles, asOf }: Props) {
           </div>
         </section>
 
-        <section className="panel">
+        <section className="panel wb-economics">
           <header className="panel__head">
             <h2 className="t-h2">Your economics</h2>
           </header>

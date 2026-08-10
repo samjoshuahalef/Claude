@@ -69,6 +69,7 @@
 
   /* ---- Shadows: tinted, layered, never above 0.16 alpha ---- */
   --shadow-xs: 0 1px 2px rgba(16, 22, 40, 0.05);
+  --shadow-panel: 0 1px 1px rgba(16, 22, 40, 0.02), 0 2px 6px -2px rgba(16, 22, 40, 0.04);
   --shadow-pop:
     0 0 0 1px rgba(16, 22, 40, 0.05),
     0 4px 8px -2px rgba(16, 22, 40, 0.06),
@@ -85,12 +86,22 @@
   --r-lg: 8px;   /* cards, tables             */
   --r-xl: 12px;  /* modals, popovers          */
 
-  /* ---- Motion. Nothing over 300ms in a tool used six hours a day. ---- */
-  --t-hover: 120ms;
-  --t-enter: 140ms;
-  --t-exit: 90ms;
-  --t-modal: 200ms;
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* ---- Motion ------------------------------------------------------------
+     Two speeds, deliberately separated. Feedback the dealer caused — a hover,
+     a press, a value changing — is near-instant, because a tool used six hours
+     a day must never feel like it is waiting. Motion the dealer did not cause —
+     a page arriving, a panel opening — is slower and softer, because that is
+     what reads as considered rather than abrupt.
+
+     Everything decelerates. Nothing overshoots: a spring implies playfulness,
+     which implies the number might be approximate. */
+  --t-hover: 130ms;
+  --t-enter: 180ms;
+  --t-exit: 120ms;
+  --t-modal: 240ms;
+  --t-page: 420ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
 
   --row-h: 36px;
@@ -127,6 +138,8 @@ body {
   *, *::before, *::after {
     transition-duration: 1ms !important;
     animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transform: none !important;
   }
 }
 
@@ -268,10 +281,14 @@ body {
   text-align: left;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color var(--t-hover) ease-out, color var(--t-hover) ease-out;
+  transition:
+    background-color var(--t-hover) var(--ease-soft),
+    color var(--t-hover) var(--ease-soft),
+    transform var(--t-exit) var(--ease-soft);
 }
 
 .nav__item:hover { background: var(--n4); color: var(--text); }
+.nav__item:active { transform: translateY(0.5px); }
 
 /* Active is a surface tint plus an accent glyph — not a solid accent fill,
    which is the template pattern. */
@@ -376,6 +393,7 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
+  transition: border-color var(--t-enter) var(--ease-soft);
 }
 
 .panel__head {
@@ -408,7 +426,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--s1);
+  transition: border-color var(--t-enter) var(--ease-soft);
 }
+
+.metric:hover { border-color: var(--border-strong); }
 
 .metric__label { font-size: 11.5px; font-weight: 500; color: var(--text-3); }
 
@@ -445,9 +466,14 @@ body {
   white-space: nowrap;
   cursor: pointer;
   text-decoration: none;
-  transition: background-color var(--t-hover) ease-out, border-color var(--t-hover) ease-out,
-    color var(--t-hover) ease-out;
+  transition:
+    background-color var(--t-hover) var(--ease-soft),
+    border-color var(--t-hover) var(--ease-soft),
+    color var(--t-hover) var(--ease-soft),
+    transform var(--t-exit) var(--ease-soft);
 }
+
+.btn:active { transform: translateY(0.5px); }
 
 .btn--primary { background: var(--accent); color: var(--on-accent); }
 .btn--primary:hover { background: var(--accent-hover); }
@@ -478,7 +504,9 @@ body {
   font-family: inherit;
   font-size: 13px;
   font-weight: 400;
-  transition: border-color var(--t-hover) ease-out, box-shadow var(--t-hover) ease-out;
+  transition:
+    border-color var(--t-hover) var(--ease-soft),
+    box-shadow var(--t-hover) var(--ease-soft);
 }
 
 .input:hover, .select:hover { border-color: var(--border-strong); }
@@ -522,7 +550,9 @@ body {
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color var(--t-hover) ease-out, color var(--t-hover) ease-out;
+  transition:
+    background-color var(--t-hover) var(--ease-soft),
+    color var(--t-hover) var(--ease-soft);
 }
 
 .segmented__item:hover { color: var(--text); }
@@ -599,7 +629,9 @@ body {
 }
 
 .table tbody tr:last-child td { border-bottom: 0; }
-.table tbody tr { transition: background-color var(--t-exit) ease-out; }
+/* Instant on enter, gentle on exit. The asymmetry is what stops a data table
+   from feeling like it snaps at you as the pointer travels across it. */
+.table tbody tr { transition: background-color var(--t-exit) var(--ease-soft); }
 .table tbody tr:hover { background: var(--n3); transition-duration: 0ms; }
 
 .td-num {
@@ -780,11 +812,12 @@ body {
   width: 100%;
   font-family: inherit;
   cursor: pointer;
-  transition: background-color var(--t-exit) ease-out;
+  transition: background-color var(--t-exit) var(--ease-soft);
 }
 
 .queue__row:last-child { border-bottom: 0; }
 .queue__row:hover { background: var(--n3); transition-duration: 0ms; }
+.queue__row:active { background: var(--n4); }
 
 .queue__mark { width: 6px; height: 6px; border-radius: 999px; }
 .queue__mark--neg { background: var(--neg); }
@@ -819,11 +852,37 @@ body {
   border-radius: var(--r-xl);
   box-shadow: var(--shadow-pop);
   overflow: hidden;
-  animation: pop var(--t-enter) var(--ease-out);
+  animation: pop var(--t-modal) var(--ease-soft);
 }
 
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes pop { from { opacity: 0; transform: scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes pop {
+  from { opacity: 0; transform: translateY(-6px) scale(0.99); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ==========================================================================
+   Page entrance
+
+   Content arrives rather than appearing. Small distance, generous duration,
+   short stagger — the effect should be felt and not watched, and it stops
+   after the fourth child so a long page never feels like it is loading in
+   sequence.
+   ========================================================================== */
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.page > * {
+  animation: rise var(--t-page) var(--ease-soft) both;
+}
+
+.page > *:nth-child(1) { animation-delay: 0ms; }
+.page > *:nth-child(2) { animation-delay: 40ms; }
+.page > *:nth-child(3) { animation-delay: 80ms; }
+.page > *:nth-child(n + 4) { animation-delay: 110ms; }
 
 .cmdk__input {
   width: 100%;
@@ -964,4 +1023,254 @@ body {
 @media (max-width: 1100px) {
   .workbench { grid-template-columns: 1fr; }
   .sticky-col { position: static; }
+}
+
+/* ==========================================================================
+   Phone
+
+   The desktop layout is a two-column shell with a persistent sidebar; a phone
+   gets a compact header and a bottom tab bar, because a dealer using this on a
+   forecourt is holding the phone one-handed and the thumb reaches the bottom.
+
+   Data tables reflow into stacked rows rather than scrolling sideways. A nine
+   column financial table behind a horizontal scrollbar is technically present
+   and practically unreadable.
+   ========================================================================== */
+
+.mobilebar,
+.tabbar {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .shell {
+    display: block;
+    min-height: 100%;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .mobilebar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    padding: 0 var(--s4);
+    background: var(--surface);
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .main {
+    border-left: 0;
+    /* Clear the tab bar, plus the home indicator on a modern iPhone. */
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .topbar {
+    top: 52px;
+    height: auto;
+    min-height: 52px;
+    padding: var(--s3) var(--s4);
+    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+
+  .topbar__title { flex-wrap: wrap; gap: var(--s2); }
+
+  /* Provenance and other secondary topbar content is not worth the vertical
+     space on a phone; it is stated again in context where it matters. */
+  .topbar .provenance { display: none; }
+
+  .page { padding: var(--s4) var(--s4) var(--s8); }
+
+  .tabbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    background: color-mix(in oklab, var(--surface) 92%, transparent);
+    backdrop-filter: blur(12px) saturate(160%);
+    border-top: 1px solid var(--hairline);
+  }
+
+  .tabbar__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 2px;
+    border-radius: var(--r-md);
+    color: var(--text-3);
+    font-size: 10.5px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color var(--t-hover) var(--ease-soft), background-color var(--t-hover) var(--ease-soft);
+  }
+
+  .tabbar__item[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+  .tabbar__item:active { background: var(--n4); }
+
+  .tabbar__icon { position: relative; display: grid; place-items: center; }
+
+  .tabbar__badge {
+    position: absolute;
+    top: -4px;
+    right: -8px;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: 9.5px;
+    font-weight: 600;
+    line-height: 15px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- Metrics: two up, never one. A single tile per row wastes the screen
+     and makes a four-metric header four scrolls long. ---- */
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
+  .metric { padding: var(--s3); }
+  .metric__value { font-size: 20px; }
+  .metric__value--sm { font-size: 18px; }
+
+  /* ---- Queue rows stack ---- */
+  .queue__row {
+    grid-template-columns: 14px minmax(0, 1fr);
+    grid-template-areas:
+      "mark title"
+      ".    verdict"
+      ".    figures";
+    row-gap: var(--s2);
+    padding: var(--s3) var(--s4);
+  }
+
+  .queue__row > :nth-child(1) { grid-area: mark; align-self: start; margin-top: 5px; }
+  .queue__row > :nth-child(2) { grid-area: title; }
+  .queue__row > :nth-child(3) { grid-area: verdict; }
+  .queue__row > :nth-child(4),
+  .queue__row > :nth-child(5) { grid-area: figures; }
+
+  /* The two numeric columns sit side by side under the verdict rather than
+     stacking, so the comparison they exist to make survives. */
+  .queue__row > :nth-child(4) { justify-self: start; text-align: left; }
+  .queue__row > :nth-child(5) { justify-self: end; text-align: right; }
+
+  .queue__num { text-align: inherit; }
+
+  /* ---- Tables become stacked records ---- */
+  .table-wrap { overflow-x: visible; }
+  .table, .table tbody, .table tr, .table td { display: block; width: 100%; }
+  .table thead { display: none; }
+
+  .table tbody tr {
+    padding: var(--s3) var(--s4);
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .table tbody tr:hover { background: transparent; }
+
+  .table td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s3);
+    height: auto;
+    padding: 3px 0;
+    border-bottom: 0;
+    white-space: normal;
+  }
+
+  /* The column header travels with the cell, so a stacked record still says
+     what each figure is. */
+  .table td::before {
+    content: attr(data-label);
+    flex: none;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--text-3);
+  }
+
+  .table td:first-child {
+    padding: 0 0 var(--s2);
+    font-size: 13.5px;
+  }
+
+  .table td:first-child::before { content: none; }
+  .table td.td-num { text-align: right; }
+
+  /* ---- Bridge ---- */
+  .bridge__row { grid-template-columns: minmax(0, 1fr) 96px; gap: var(--s3); }
+  .bridge__track { display: none; }
+
+  /* ---- Decision ---- */
+  .decision__top { padding: var(--s4); }
+  .decision__caption { padding: 0 var(--s4) var(--s4); }
+  .decision__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .decision__stat { border-right: 0; border-bottom: 1px solid var(--hairline); }
+  .t-display { font-size: 30px; }
+
+  .driver { grid-template-columns: minmax(0, 1fr) 56px; }
+}
+
+/* Only the narrowest phones fall back to a single column. At 390px two tiles
+   still fit comfortably, and one-up turns a four-metric header into four
+   screens of scrolling. */
+@media (max-width: 359px) {
+  .metrics { grid-template-columns: 1fr; }
+  .decision__stats { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 460px) {
+  .tabbar__item { font-size: 10px; }
+  .metric { padding: var(--s3) var(--s3) var(--s3); gap: 2px; }
+  .metric__sub { font-size: 11px; }
+}
+
+/* ==========================================================================
+   Appraisal on a phone
+
+   On a desktop the inputs sit beside the answer and both are visible at once.
+   Stacked on a phone, the naive order buries the answer under two panels of
+   controls — so the dealer standing in front of a customer scrolls past
+   everything they already know to reach the one number they opened the app for.
+
+   `display: contents` dissolves the two columns so the panels can be resequenced
+   individually: describe the car, get the answer, then adjust the assumptions
+   underneath it.
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .workbench {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+  }
+
+  .workbench__col {
+    display: contents;
+  }
+
+  .wb-vehicle { order: 1; }
+
+  /* The decision headline — first child of the results column. */
+  .workbench__col:last-child > *:first-child { order: 2; }
+
+  .wb-economics { order: 3; }
+
+  /* Bridge, chart, confidence, evidence: the working, in order, underneath. */
+  .workbench__col:last-child > *:not(:first-child) { order: 4; }
 }

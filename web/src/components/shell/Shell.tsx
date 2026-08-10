@@ -56,6 +56,20 @@ export function Shell({ counts, children }: { counts: NavCounts; children: React
 
   return (
     <div className="shell">
+      <header className="mobilebar">
+        <div className="brand">
+          <span className="brand__mark" aria-hidden />
+          Autoflair
+        </div>
+        <button
+          className="btn btn--quiet btn--sm"
+          onClick={() => setPaletteOpen(true)}
+          aria-label="Search"
+        >
+          <SearchIcon />
+        </button>
+      </header>
+
       <aside className="sidebar">
         <div className="brand">
           <span className="brand__mark" aria-hidden />
@@ -106,6 +120,32 @@ export function Shell({ counts, children }: { counts: NavCounts; children: React
       </aside>
 
       <main className="main">{children}</main>
+
+      {/* Phone navigation. Rendered always and revealed by CSS rather than by a
+          breakpoint hook, so the first paint is correct on a phone instead of
+          flashing the desktop layout and then correcting itself. */}
+      <nav className="tabbar" aria-label="Modules">
+        {MODULES.map(({ href, label, Icon, count }) => {
+          const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+          const value = count ? counts[count] : null;
+          return (
+            <Link
+              key={href}
+              href={href}
+              className="tabbar__item"
+              aria-current={active ? "page" : undefined}
+            >
+              <span className="tabbar__icon">
+                <Icon />
+                {count === "actions" && value !== null && value > 0 && (
+                  <span className="tabbar__badge">{value}</span>
+                )}
+              </span>
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
 
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
     </div>

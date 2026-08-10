@@ -82,18 +82,18 @@ export default async function StockPage() {
                         {review.item.vehicle.make} {review.item.vehicle.model}{" "}
                         <span className="td-muted">{review.item.vehicle.derivative}</span>
                       </td>
-                      <td className="td-num">{formatKm(review.item.vehicle.mileageKm)}</td>
-                      <td className="td-num">{review.daysInStock}d</td>
-                      <td className="td-num">
+                      <td className="td-num" data-label="Mileage">{formatKm(review.item.vehicle.mileageKm)}</td>
+                      <td className="td-num" data-label="Age">{review.daysInStock}d</td>
+                      <td className="td-num" data-label="Paid">
                         <Money value={review.item.acquisitionPrice} showCode={false} />
                       </td>
-                      <td className="td-num">
+                      <td className="td-num" data-label="Asking">
                         <Money value={review.item.currentAskingPrice} showCode={false} />
                       </td>
-                      <td className="td-num">
+                      <td className="td-num" data-label="Return now">
                         <Percent value={review.holding.annualisedReturn} />
                       </td>
-                      <td>
+                      <td data-label="Recommendation">
                         <span className={`pill pill--${action.tone}`}>
                           <span className="pill__dot" aria-hidden />
                           {action.label}
@@ -105,7 +105,7 @@ export default async function StockPage() {
                           )}
                         </span>
                       </td>
-                      <td className="td-num">
+                      <td className="td-num" data-label="After acting">
                         {review.action === "hold" ? (
                           <span className="td-null">—</span>
                         ) : review.action === "exit" ? (
@@ -116,7 +116,7 @@ export default async function StockPage() {
                           <Percent value={review.recommended.annualisedReturn} />
                         )}
                       </td>
-                      <td className="td-num">
+                      <td className="td-num" data-label="Gain from acting">
                         {review.valueOfActing === 0 ? (
                           <span className="td-null">—</span>
                         ) : (

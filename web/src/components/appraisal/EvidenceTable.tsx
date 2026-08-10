@@ -72,18 +72,19 @@ export function EvidenceTable({ evidence, currency }: Props) {
               );
               return (
                 <tr key={item.comparable.id}>
-                  <td>{formatRegistration(item.comparable.vehicle.firstRegistration)}</td>
-                  <td className="td-num">{formatKm(item.comparable.vehicle.mileageKm)}</td>
-                  <td className="td-muted">
+                  <td data-label="Registered">{formatRegistration(item.comparable.vehicle.firstRegistration)}</td>
+                  <td data-label="Mileage" className="td-num">{formatKm(item.comparable.vehicle.mileageKm)}</td>
+                  <td data-label="Seller" className="td-muted">
                     {item.comparable.sellerType === "private" ? "Private" : "Dealer"} ·{" "}
                     {item.comparable.region}
                   </td>
-                  <td className="td-muted">{formatShortDate(item.comparable.listedAt)}</td>
-                  <td className="td-num">
+                  <td data-label="Listed" className="td-muted">{formatShortDate(item.comparable.listedAt)}</td>
+                  <td className="td-num" data-label="Asking">
                     {formatMoney(item.comparable.askingPrice, currency)}
                   </td>
                   <td
                     className="td-num"
+                    data-label="Adjustment"
                     style={{
                       color: adjustment === 0 ? "var(--text-3)" : undefined,
                     }}
@@ -93,15 +94,17 @@ export function EvidenceTable({ evidence, currency }: Props) {
                   >
                     {adjustment === 0 ? "—" : formatSignedMoney(adjustment, currency)}
                   </td>
-                  <td className="td-num">{formatMoney(item.adjustedPrice, currency)}</td>
-                  <td className="td-num">
+                  <td className="td-num" data-label="Adjusted">
+                    {formatMoney(item.adjustedPrice, currency)}
+                  </td>
+                  <td className="td-num" data-label="Days">
                     {item.daysOnMarket === null ? (
                       <span className="td-muted">live</span>
                     ) : (
                       item.daysOnMarket
                     )}
                   </td>
-                  <td className="td-num">
+                  <td className="td-num" data-label="Weight">
                     <span className="row" style={{ justifyContent: "flex-end" }}>
                       <span className="meter">
                         <span
