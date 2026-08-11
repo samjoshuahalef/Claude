@@ -3,11 +3,15 @@
 import React from "react";
 import { cn } from "./cn";
 import { Kbd } from "./Badge";
+import { IconButton } from "./Button";
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
+  CloseIcon,
+  DocsIcon,
   ExtractIcon,
   FlameIcon,
+  HelpIcon,
   HomeIcon,
   KeyIcon,
   LogsIcon,
@@ -72,7 +76,17 @@ function Divider() {
   return <div className="my-4 h-1 bg-border-faint" aria-hidden="true" />;
 }
 
-export function Sidebar({ active = "overview" }: { active?: NavKey }) {
+export function Sidebar({
+  active = "overview",
+  onNavigate,
+  onClose,
+}: {
+  active?: NavKey;
+  /** Fired when a destination is picked — dismisses the mobile drawer. */
+  onNavigate?: () => void;
+  /** Fired by the drawer's close button. */
+  onClose?: () => void;
+}) {
   const [extractOpen, setExtractOpen] = React.useState(
     active.startsWith("extract"),
   );
@@ -84,9 +98,14 @@ export function Sidebar({ active = "overview" }: { active?: NavKey }) {
     >
       <div className="flex h-(--fc-topbar-height) items-center gap-8 px-16">
         <FlameIcon size={24} className="text-heat-100" />
-        <span className="text-label-x-large tracking-[-0.3px] text-accent-black">
+        <span className="flex-1 text-label-x-large tracking-[-0.3px] text-accent-black">
           Firecrawl
         </span>
+        <div className="lg:hidden">
+          <IconButton label="Close navigation" onClick={onClose}>
+            <CloseIcon size={18} />
+          </IconButton>
+        </div>
       </div>
 
       <div className="px-12 pb-8">
@@ -105,11 +124,13 @@ export function Sidebar({ active = "overview" }: { active?: NavKey }) {
           icon={<HomeIcon />}
           label="Overview"
           active={active === "overview"}
+          onClick={onNavigate}
         />
         <NavItem
           icon={<PlayIcon />}
           label="Playground"
           active={active === "playground"}
+          onClick={onNavigate}
         />
 
         <NavItem
@@ -134,28 +155,48 @@ export function Sidebar({ active = "overview" }: { active?: NavKey }) {
               label="Overview"
               indented
               active={active === "extract-overview"}
+              onClick={onNavigate}
             />
             <NavItem
               label="Playground"
               indented
               active={active === "extract-playground"}
+              onClick={onNavigate}
             />
           </div>
         ) : null}
 
         <Divider />
 
+        <div className="flex flex-col gap-4 lg:hidden">
+          <NavItem icon={<HelpIcon />} label="Help" onClick={onNavigate} />
+          <NavItem icon={<DocsIcon />} label="Docs" onClick={onNavigate} />
+          <Divider />
+        </div>
+
         <NavItem
           icon={<LogsIcon />}
           label="Activity Logs"
           active={active === "logs"}
+          onClick={onNavigate}
         />
-        <NavItem icon={<UsageIcon />} label="Usage" active={active === "usage"} />
-        <NavItem icon={<KeyIcon />} label="API Keys" active={active === "keys"} />
+        <NavItem
+          icon={<UsageIcon />}
+          label="Usage"
+          active={active === "usage"}
+          onClick={onNavigate}
+        />
+        <NavItem
+          icon={<KeyIcon />}
+          label="API Keys"
+          active={active === "keys"}
+          onClick={onNavigate}
+        />
         <NavItem
           icon={<SettingsIcon />}
           label="Settings"
           active={active === "settings"}
+          onClick={onNavigate}
         />
       </nav>
 
@@ -193,7 +234,7 @@ export function Sidebar({ active = "overview" }: { active?: NavKey }) {
         </button>
       </div>
 
-      <div className="border-t-1 border-border-faint p-12">
+      <div className="hidden border-t-1 border-border-faint p-12 lg:block">
         <button
           type="button"
           className="flex h-36 w-full cursor-pointer items-center gap-10 rounded-8 px-8 text-black-alpha-56 transition hover:bg-black-alpha-4 hover:text-accent-black"

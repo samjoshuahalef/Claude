@@ -125,18 +125,18 @@ export default function OverviewPage() {
   return (
     <AppShell active="overview">
       {/* ---------------------------------------------- Explore our endpoints */}
-      <section className="border-b-1 border-border-faint bg-accent-white p-24">
+      <section className="border-b-1 border-border-faint bg-accent-white p-16 sm:p-24">
         <h1 className="text-title-h5 text-accent-black">Explore our endpoints</h1>
         <p className="mt-4 text-body-medium text-black-alpha-56">
           Power your applications with our comprehensive scraping API
         </p>
       </section>
 
-      <section className="relative grid grid-cols-1 border-b-1 border-border-faint bg-accent-white md:grid-cols-2 lg:grid-cols-4">
+      <section className="relative grid grid-cols-1 bg-accent-white md:grid-cols-2 lg:grid-cols-4">
         {ENDPOINTS.map((endpoint, index) => (
           <article
             key={endpoint.name}
-            className="group relative flex cursor-pointer flex-col gap-10 p-24 transition hover:bg-background-lighter lg:border-l-1 lg:border-border-faint lg:first:border-l-0"
+            className="group relative flex cursor-pointer flex-col gap-10 border-b-1 border-border-faint p-16 transition hover:bg-background-lighter sm:p-24 md:[&:nth-child(even)]:border-l-1 lg:border-l-1 lg:first:border-l-0"
           >
             <span className="text-black-alpha-40 transition group-hover:text-heat-100">
               {endpoint.icon}
@@ -161,12 +161,12 @@ export default function OverviewPage() {
       </section>
 
       {/* Rhythm band — the grid keeps breathing even where there is no content. */}
-      <div className="h-64 border-b-1 border-border-faint bg-accent-white" />
+      <div className="h-32 border-b-1 border-border-faint bg-accent-white sm:h-64" />
 
       {/* ------------------------------------------ Usage / key / integration */}
       <section className="grid grid-cols-1 border-b-1 border-border-faint bg-accent-white lg:grid-cols-[1.35fr_1fr]">
-        <div className="flex flex-col">
-          <div className="border-b-1 border-border-faint p-24">
+        <div className="flex min-w-0 flex-col">
+          <div className="border-b-1 border-border-faint p-16 sm:p-24">
             <div className="flex items-start justify-between gap-16">
               <div>
                 <h2 className="text-label-x-large text-accent-black">
@@ -184,7 +184,7 @@ export default function OverviewPage() {
             </div>
           </div>
 
-          <div className="p-24">
+          <div className="p-16 sm:p-24">
             <div className="flex items-center gap-8">
               <h2 className="text-label-x-large text-accent-black">
                 Concurrent Browsers
@@ -216,8 +216,8 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        <div className="flex flex-col border-border-faint lg:border-l-1">
-          <div className="border-b-1 border-border-faint p-24">
+        <div className="flex min-w-0 flex-col border-t-1 border-border-faint lg:border-t-0 lg:border-l-1">
+          <div className="border-b-1 border-border-faint p-16 sm:p-24">
             <h2 className="text-label-x-large text-accent-black">API Key</h2>
             <p className="mt-2 text-body-medium text-black-alpha-48">
               Start scraping right away
@@ -236,7 +236,7 @@ export default function OverviewPage() {
             </div>
           </div>
 
-          <div className="p-24">
+          <div className="p-16 sm:p-24">
             <div className="flex items-start justify-between gap-16">
               <div>
                 <h2 className="text-label-x-large text-accent-black">
@@ -263,8 +263,8 @@ export default function OverviewPage() {
 
       {/* -------------------------------- Integrations / example projects */}
       <section className="grid grid-cols-1 bg-accent-white lg:grid-cols-[1.35fr_1fr]">
-        <div>
-          <div className="border-b-1 border-border-faint p-24">
+        <div className="min-w-0">
+          <div className="border-b-1 border-border-faint p-16 sm:p-24">
             <h2 className="text-label-x-large text-accent-black">Integrations</h2>
           </div>
 
@@ -292,8 +292,8 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        <div className="relative border-border-faint lg:border-l-1">
-          <div className="relative overflow-hidden border-b-1 border-border-faint p-24">
+        <div className="relative min-w-0 border-t-1 border-border-faint lg:border-t-0 lg:border-l-1">
+          <div className="relative overflow-hidden border-b-1 border-border-faint p-16 sm:p-24">
             <div className="absolute -top-8 right-0 opacity-60">
               <AsciiField rows={8} cols={52} seed={11} />
             </div>
@@ -306,7 +306,7 @@ export default function OverviewPage() {
             <a
               key={project.title}
               href="#"
-              className="group flex flex-col gap-8 border-b-1 border-border-faint p-24 transition hover:bg-background-lighter"
+              className="group flex flex-col gap-8 border-b-1 border-border-faint p-16 transition hover:bg-background-lighter sm:p-24"
             >
               <div className="flex items-start justify-between gap-16">
                 <h3 className="font-mono text-mono-medium text-accent-black">

@@ -330,3 +330,15 @@ export const FlameIcon = ({ size = 22, className }: IconProps) => (
     <path d="M13.3 1.6c.5 2.6-.3 4.6-1.8 6.4-1.4 1.7-3.3 3.2-4.6 5.2A7.6 7.6 0 0 0 5.6 17a6.5 6.5 0 0 0 13 .3c0-2.2-.9-3.9-2-5.4-.4 1-1 1.8-1.9 2.2.5-2.6-.2-5-1.5-7-.7-1.1-1.6-2-2.4-3 1.1-.3 2.2-1 2.5-2.5Z" />
   </svg>
 );
+
+export const MenuIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M2.5 4h11M2.5 8h11M2.5 12h11" />
+  </Svg>
+);
+
+export const CloseIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m4 4 8 8M12 4l-8 8" />
+  </Svg>
+);

@@ -263,10 +263,51 @@ information; the live dot is accompanied by the literal text `[ LIVE ]`.
 
 ---
 
-## 7. Breakpoints
+## 7. Breakpoints and responsive behaviour
 
 `xs 390` · `sm 576` · `md 768` · `lg 996` · `xl 1200` — Firecrawl's values, not
 Tailwind's defaults. Note `lg` is 996, not 1024.
+
+**`lg` is the layout hinge.** Above it the sidebar is in the flow; below it the
+sidebar leaves the flow and becomes an off-canvas drawer:
+
+| | `< lg` (996) | `>= lg` |
+|---|---|---|
+| Sidebar | Fixed drawer, `-translate-x-full` until opened, dimmed `black-alpha-32` backdrop | In flow, 240px |
+| Drawer dismissal | Backdrop click, close button, `Escape`; body scroll locked while open | n/a |
+| Topbar left | Hamburger + team chip (name hidden below `xs`) | Team chip only |
+| Help / Docs | Moved into the drawer | Topbar buttons |
+| Collapse control | Hidden — the drawer has its own close | Visible |
+| Cell padding | `p-16` | `p-24` (`sm` and up) |
+| Rhythm band | 32px | 64px |
+
+**The grid rules have to resolve at every column count.** This is the part
+that breaks silently. The pattern that works:
+
+- Every cell carries a bottom rule, and the last row's doubles as the section
+  separator — so the `<section>` must *not* draw its own `border-b`, or the
+  bottom line renders twice.
+- Vertical rules are per-column-count: `md:[&:nth-child(even)]:border-l-1` for
+  two columns, `lg:border-l-1 lg:first:border-l-0` for four.
+- A right-hand column that stacks below its partner needs `border-t-1
+  lg:border-t-0` — the seam changes axis with the layout.
+
+**Watch `min-width: auto` on grid and flex children.** A wide `<pre>` (the MCP
+snippet) will stretch its track past the viewport rather than scrolling inside
+itself. Every grid track holding code, long mono strings or truncating text
+needs an explicit `min-w-0`.
+
+Verify with `document.documentElement.scrollWidth` at 390px — it must equal
+390. Note the shell is `h-screen` with `main` as the scroll container, so
+`fullPage` screenshots capture only one viewport; use a tall viewport instead.
+
+### Deviation: mobile is an extension, not a port
+
+Firecrawl's own mobile dashboard is not in the reference screenshots and their
+site is unreachable from this environment, so the drawer pattern above is built
+from the system's existing vocabulary (240px panel, `heat-8` active state,
+hairline dividers, 200ms house easing) rather than copied. If a mobile
+reference turns up, this is the layer to re-check.
 
 ---
 
