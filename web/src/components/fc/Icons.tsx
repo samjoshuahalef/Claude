@@ -342,3 +342,39 @@ export const CloseIcon = (p: IconProps) => (
     <path d="m4 4 8 8M12 4l-8 8" />
   </Svg>
 );
+
+export const MarketIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M2 11.2 6 6.6l3 2.7 5-6" />
+    <path d="M10.6 3.3H14v3.4" />
+    <path d="M2 13.8h12" />
+  </Svg>
+);
+
+export const ValuationIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M8.4 2.2H13a.8.8 0 0 1 .8.8v4.6a1 1 0 0 1-.3.7l-5.6 5.6a1 1 0 0 1-1.4 0L2.3 9.5a1 1 0 0 1 0-1.4l5.4-5.6a1 1 0 0 1 .7-.3Z" />
+    <path d="M10.9 5.1h.01" />
+  </Svg>
+);
+
+export const SourcingIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="8" cy="8" r="5.6" />
+    <circle cx="8" cy="8" r="2.2" />
+    <path d="M8 .8v1.6M8 13.6v1.6M15.2 8h-1.6M2.4 8H.8" />
+  </Svg>
+);
+
+export const InventoryIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M2.2 6.4 8 2.6l5.8 3.8v6.4a.7.7 0 0 1-.7.7H2.9a.7.7 0 0 1-.7-.7V6.4Z" />
+    <path d="M5.6 13.5V9.2h4.8v4.3" />
+  </Svg>
+);
+
+export const WatchlistIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 2.5h8a.6.6 0 0 1 .6.6v10.4L8 11.2l-4.6 2.3V3.1a.6.6 0 0 1 .6-.6Z" />
+  </Svg>
+);

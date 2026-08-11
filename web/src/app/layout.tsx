@@ -30,9 +30,9 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Dashboard — Firecrawl design reference",
+  title: "AutoFlair — automotive market intelligence",
   description:
-    "Reference implementation of the Firecrawl design system: tokens, primitives and motion.",
+    "Live market data for professional car dealers: valuation, sourcing, inventory intelligence.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

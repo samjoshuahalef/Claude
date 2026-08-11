@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { cn } from "./cn";
 
 export type ButtonVariant = "primary" | "secondary" | "tertiary" | "danger";
@@ -10,6 +11,8 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   iconLeft?: React.ReactNode;
   iconRight?: React.ReactNode;
   loading?: boolean;
+  /** Renders as a link. A button that navigates should be an anchor. */
+  href?: string;
 };
 
 const sizes: Record<ButtonSize, string> = {
@@ -35,23 +38,21 @@ export function Button({
   iconRight,
   loading,
   disabled,
+  href,
   className,
   children,
   ...rest
 }: ButtonProps) {
-  return (
-    <button
-      type="button"
-      disabled={disabled || loading}
-      className={cn(
-        "inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap transition select-none",
-        "active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40",
-        sizes[size],
-        variants[variant],
-        className,
-      )}
-      {...rest}
-    >
+  const classes = cn(
+    "inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap transition select-none",
+    "active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40",
+    sizes[size],
+    variants[variant],
+    className,
+  );
+
+  const content = (
+    <>
       {loading ? (
         <span
           className="size-14 animate-spin-fc rounded-full border-2 border-current border-t-transparent opacity-60"
@@ -62,6 +63,25 @@ export function Button({
       )}
       {children}
       {iconRight}
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className={classes}>
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      disabled={disabled || loading}
+      className={classes}
+      {...rest}
+    >
+      {content}
     </button>
   );
 }

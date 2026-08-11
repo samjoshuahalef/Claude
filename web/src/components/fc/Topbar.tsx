@@ -12,7 +12,7 @@ import {
 } from "./Icons";
 
 export function Topbar({
-  team = "Personal Team",
+  team = "Garage Meier AG",
   notifications = 0,
   onMenuClick,
 }: {

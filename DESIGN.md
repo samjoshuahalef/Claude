@@ -311,7 +311,53 @@ reference turns up, this is the layer to re-check.
 
 ---
 
-## 8. Deliberate deviations
+## 8. Data density and market ink (AutoFlair)
+
+Firecrawl's dashboard is airy — 40px nav rows, 24px cell padding. A dealer
+scanning 200 listings is not, so dense data gets its own scale:
+
+| Token | Value | Use |
+|---|---|---|
+| `--fc-row-comfortable` | 36px | default table row |
+| `--fc-row-compact` | 32px | table headers, dense lists |
+| `.tnum` | `tabular-nums` | **every numeric cell** |
+
+Numeric columns are right-aligned and `.tnum`, so digits line up down the
+column and values do not reflow as they change.
+
+### Market ink
+
+`heat` is brand and action. **It never encodes data.** Scoring a deal in orange
+makes it read as a button and breaks the one-saturated-heat-per-view budget.
+The one exception is a *pointer* — the marked bucket on a distribution chart is
+heat because it points at your vehicle, it does not encode a value.
+
+Polarity is a **diverging pair, not three categories**. An amber midpoint is a
+hue at a diverging centre, which is an anti-pattern, and amber↔red collapses
+under deuteranopia:
+
+| Token | Value | Contrast on white |
+|---|---|---|
+| `market-down` | `#15803d` | 5.02:1 — AA text |
+| `market-up` | `#b91c1c` | 6.47:1 — AA text |
+| `market-flat` | `black-alpha-64` | neutral at par |
+
+The bright `accent-forest` / `accent-crimson` stay for fills and dots only —
+`accent-forest` is 2.28:1 and fails as text.
+
+Green↔red is ΔE 4.2 under deuteranopia, so **colour never carries polarity
+alone**. `TrendDelta` always renders a direction glyph and a signed value, and
+has no colour-only variant to reach for. `accent-bluetron`↔`accent-crimson`
+would be the CVD-safest pair (ΔE 31.6) and is the fallback if we ever drop the
+green=cheap convention. All numbers from `dataviz/scripts/validate_palette.js`.
+
+`TrendDelta` requires an explicit `goodWhen` — metrics disagree about direction
+(stock value up is good, days-on-lot up is bad, a listing below market is a good
+buy), and defaulting it produces confidently wrong colour.
+
+---
+
+## 9. Deliberate deviations
 
 Five, all forced, all flagged:
 
@@ -333,3 +379,8 @@ Five, all forced, all flagged:
 
 The Mobbin footer bar and watermark in the source screenshots are that
 service's capture chrome, not part of Firecrawl's UI, and are not reproduced.
+
+One inherited caveat: `heat-100` on white is 3.16:1, which is AA for large text
+and UI but not for body copy. Firecrawl uses it for small mono strings (the API
+key field) and the 1:1 port keeps that. Prefer `accent-black` for any new small
+text; reserve heat text for labels 16px and up.

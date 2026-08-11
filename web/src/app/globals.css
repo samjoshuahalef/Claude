@@ -207,6 +207,25 @@
   --breakpoint-lg: 996px;
   --breakpoint-xl: 1200px;
 
+  /* ------------------------------------------- Market data ink (AutoFlair)
+     Polarity, not three categories. Validated with the dataviz palette
+     checker: bluetron/crimson would be the CVD-safest pair, but green=cheap
+     is too strong a convention in a money product to break, so these two
+     carry it and every component that uses them is required to also render a
+     direction glyph and a signed value. Colour reinforces, never carries.
+       #15803d on white 5.02:1 · #b91c1c on white 6.47:1 — both AA for text.
+     The bright accent-forest / accent-crimson stay for fills and dots only;
+     accent-forest is 2.28:1 and fails as text. */
+  --color-market-down: #15803d;
+  --color-market-up: #b91c1c;
+  --color-market-flat: #262626a3;
+
+  /* ---------------------------------------------------- Table density
+     Firecrawl's dashboard is airy. Scanning 200 listings is not, so rows get
+     their own scale below the 40px nav row. */
+  --fc-row-comfortable: 36px;
+  --fc-row-compact: 32px;
+
   /* --------------------------------------------------------- App chrome */
   --fc-sidebar-width: 240px;
   --fc-topbar-height: 60px;
@@ -409,4 +428,10 @@
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* Digits must line up down a column, and never reflow as values change. */
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }

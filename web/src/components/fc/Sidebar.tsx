@@ -1,66 +1,89 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { cn } from "./cn";
 import { Kbd } from "./Badge";
 import { IconButton } from "./Button";
 import {
-  ChevronDownIcon,
   ChevronLeftIcon,
   CloseIcon,
   DocsIcon,
-  ExtractIcon,
   FlameIcon,
   HelpIcon,
   HomeIcon,
-  KeyIcon,
-  LogsIcon,
+  InventoryIcon,
+  MarketIcon,
   MegaphoneIcon,
-  PlayIcon,
   SearchIcon,
   SettingsIcon,
-  UsageIcon,
+  SourcingIcon,
+  ValuationIcon,
+  WatchlistIcon,
 } from "./Icons";
+
+/**
+ * AutoFlair's navigation.
+ *
+ * Firecrawl's nav (Playground / API Keys / Usage / Activity Logs) served a
+ * developer testing endpoints. This user is a dealer deciding what to buy and
+ * what to pay, so the sections follow their workflow instead. Usage and API
+ * keys move under Settings — account admin, not daily work.
+ *
+ * Nine stated capabilities collapse to six sections: trends are the time axis
+ * on Market, trade-in is a mode of Valuation, and a watch is a saved query
+ * plus a notification rule. See PRODUCT.md.
+ */
 
 export type NavKey =
   | "overview"
-  | "playground"
-  | "extract"
-  | "extract-overview"
-  | "extract-playground"
-  | "logs"
-  | "usage"
-  | "keys"
+  | "market"
+  | "valuation"
+  | "sourcing"
+  | "inventory"
+  | "watchlists"
   | "settings";
+
+type NavEntry = {
+  key: NavKey;
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+};
+
+const PRIMARY: NavEntry[] = [
+  { key: "overview", label: "Overview", href: "/", icon: <HomeIcon /> },
+  { key: "market", label: "Market", href: "/market", icon: <MarketIcon /> },
+  { key: "valuation", label: "Valuation", href: "/valuation", icon: <ValuationIcon /> },
+  { key: "sourcing", label: "Sourcing", href: "/sourcing", icon: <SourcingIcon /> },
+  { key: "inventory", label: "Inventory", href: "/inventory", icon: <InventoryIcon /> },
+  { key: "watchlists", label: "Watchlists", href: "/watchlists", icon: <WatchlistIcon /> },
+];
 
 function NavItem({
   icon,
   label,
+  href,
   active,
   trailing,
-  indented,
   onClick,
 }: {
   icon?: React.ReactNode;
   label: string;
+  href?: string;
   active?: boolean;
   trailing?: React.ReactNode;
-  indented?: boolean;
   onClick?: () => void;
 }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-current={active ? "page" : undefined}
-      className={cn(
-        "flex h-40 w-full cursor-pointer items-center gap-10 rounded-8 pr-10 text-label-medium transition",
-        indented ? "pl-38" : "pl-10",
-        active
-          ? "bg-heat-8 text-heat-100"
-          : "text-black-alpha-64 hover:bg-black-alpha-4 hover:text-accent-black",
-      )}
-    >
+  const classes = cn(
+    "flex h-40 w-full cursor-pointer items-center gap-10 rounded-8 pr-10 pl-10 text-label-medium transition",
+    active
+      ? "bg-heat-8 text-heat-100"
+      : "text-black-alpha-64 hover:bg-black-alpha-4 hover:text-accent-black",
+  );
+
+  const inner = (
+    <>
       {icon ? (
         <span className={cn("shrink-0", active ? "text-heat-100" : "text-black-alpha-40")}>
           {icon}
@@ -68,7 +91,26 @@ function NavItem({
       ) : null}
       <span className="flex-1 text-left">{label}</span>
       {trailing}
-    </button>
+    </>
+  );
+
+  if (!href) {
+    return (
+      <button type="button" onClick={onClick} className={classes}>
+        {inner}
+      </button>
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      aria-current={active ? "page" : undefined}
+      className={classes}
+    >
+      {inner}
+    </Link>
   );
 }
 
@@ -87,10 +129,6 @@ export function Sidebar({
   /** Fired by the drawer's close button. */
   onClose?: () => void;
 }) {
-  const [extractOpen, setExtractOpen] = React.useState(
-    active.startsWith("extract"),
-  );
-
   return (
     <aside
       className="flex w-(--fc-sidebar-width) shrink-0 flex-col border-r-1 border-border-faint bg-accent-white"
@@ -99,7 +137,7 @@ export function Sidebar({
       <div className="flex h-(--fc-topbar-height) items-center gap-8 px-16">
         <FlameIcon size={24} className="text-heat-100" />
         <span className="flex-1 text-label-x-large tracking-[-0.3px] text-accent-black">
-          Firecrawl
+          AutoFlair
         </span>
         <div className="lg:hidden">
           <IconButton label="Close navigation" onClick={onClose}>
@@ -108,66 +146,39 @@ export function Sidebar({
         </div>
       </div>
 
+      {/*
+        The Advisor lives here rather than in the nav. As a destination it
+        becomes a chatbot page nobody returns to; as the ⌘K field it is on
+        every screen and knows what you are looking at.
+      */}
       <div className="px-12 pb-8">
         <button
           type="button"
           className="flex h-40 w-full cursor-pointer items-center gap-10 rounded-8 bg-black-alpha-4 px-10 text-black-alpha-48 transition hover:bg-black-alpha-5"
         >
           <SearchIcon />
-          <span className="flex-1 text-left text-label-medium">Search</span>
+          <span className="flex-1 truncate text-left text-label-medium">
+            Search or ask anything
+          </span>
           <Kbd>⌘K</Kbd>
         </button>
       </div>
 
       <nav className="flex flex-1 flex-col gap-4 overflow-y-auto px-12">
-        <NavItem
-          icon={<HomeIcon />}
-          label="Overview"
-          active={active === "overview"}
-          onClick={onNavigate}
-        />
-        <NavItem
-          icon={<PlayIcon />}
-          label="Playground"
-          active={active === "playground"}
-          onClick={onNavigate}
-        />
-
-        <NavItem
-          icon={<ExtractIcon />}
-          label="Extract"
-          active={active === "extract"}
-          onClick={() => setExtractOpen((open) => !open)}
-          trailing={
-            <span
-              className={cn(
-                "text-black-alpha-32 transition-transform",
-                extractOpen && "rotate-180",
-              )}
-            >
-              <ChevronDownIcon size={14} />
-            </span>
-          }
-        />
-        {extractOpen ? (
-          <div className="flex flex-col gap-4">
-            <NavItem
-              label="Overview"
-              indented
-              active={active === "extract-overview"}
-              onClick={onNavigate}
-            />
-            <NavItem
-              label="Playground"
-              indented
-              active={active === "extract-playground"}
-              onClick={onNavigate}
-            />
-          </div>
-        ) : null}
+        {PRIMARY.map((entry) => (
+          <NavItem
+            key={entry.key}
+            icon={entry.icon}
+            label={entry.label}
+            href={entry.href}
+            active={active === entry.key}
+            onClick={onNavigate}
+          />
+        ))}
 
         <Divider />
 
+        {/* No room for these in the topbar on small screens. */}
         <div className="flex flex-col gap-4 lg:hidden">
           <NavItem icon={<HelpIcon />} label="Help" onClick={onNavigate} />
           <NavItem icon={<DocsIcon />} label="Docs" onClick={onNavigate} />
@@ -175,26 +186,9 @@ export function Sidebar({
         </div>
 
         <NavItem
-          icon={<LogsIcon />}
-          label="Activity Logs"
-          active={active === "logs"}
-          onClick={onNavigate}
-        />
-        <NavItem
-          icon={<UsageIcon />}
-          label="Usage"
-          active={active === "usage"}
-          onClick={onNavigate}
-        />
-        <NavItem
-          icon={<KeyIcon />}
-          label="API Keys"
-          active={active === "keys"}
-          onClick={onNavigate}
-        />
-        <NavItem
           icon={<SettingsIcon />}
           label="Settings"
+          href="/settings"
           active={active === "settings"}
           onClick={onNavigate}
         />
@@ -210,8 +204,7 @@ export function Sidebar({
           </span>
           <span className="flex flex-col gap-2">
             <span className="text-label-medium text-accent-black">
-              What&apos;s New{" "}
-              <span className="text-heat-100">(6)</span>
+              What&apos;s New <span className="text-heat-100">(6)</span>
             </span>
             <span className="text-body-small text-black-alpha-56">
               View our latest update
@@ -229,7 +222,7 @@ export function Sidebar({
             s
           </span>
           <span className="min-w-0 flex-1 truncate text-left text-label-medium text-black-alpha-72">
-            samlee@content-mobbin.com
+            sam@autoflair.ch
           </span>
         </button>
       </div>

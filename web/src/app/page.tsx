@@ -1,332 +1,207 @@
 import React from "react";
+import Link from "next/link";
 import {
   AppShell,
-  AreaChart,
-  AsciiField,
   Badge,
-  CodeBlock,
-  GridPlus,
-  IconButton,
-  Tag,
+  Button,
+  DataTable,
+  EmptyState,
+  Money,
+  PageHeader,
+  StatTile,
+  TrendDelta,
   ArrowRightIcon,
-  CopyIcon,
-  CrawlIcon,
-  ExternalIcon,
-  ExtractIcon,
-  EyeIcon,
-  ScrapeIcon,
-  SearchEndpointIcon,
+  SearchIcon,
+  ValuationIcon,
+  type Column,
 } from "@/components/fc";
+import { ALERTS, SEGMENTS } from "@/lib/mock";
+import { chf, type AlertItem, type Segment } from "@/lib/types";
 
-/* -------------------------------------------------------------------------
-   Content
-   ------------------------------------------------------------------------- */
+/**
+ * Overview is a decision inbox, not a stats dashboard.
+ *
+ * Firecrawl's Overview showcased endpoints because its user was evaluating an
+ * API. A dealer opening AutoFlair at 8am has a different question — what
+ * changed overnight and what do I do about it — so the page leads with the
+ * action queue and keeps the numbers as supporting context.
+ */
 
-const ENDPOINTS = [
+const KIND_LABEL: Record<AlertItem["kind"], string> = {
+  deal: "Deal",
+  "price-drop": "Price drop",
+  "stock-aging": "Stock",
+  trend: "Trend",
+};
+
+const segmentColumns: Array<Column<Segment>> = [
   {
-    name: "Scrape",
-    icon: <ScrapeIcon size={20} />,
-    description: "Get llm-ready data from websites. Markdown, JSON, screenshot, etc.",
+    key: "label",
+    header: "Segment",
+    render: (row) => (
+      <Link
+        href="/market"
+        className="text-accent-black transition hover:text-heat-100"
+      >
+        {row.label}
+      </Link>
+    ),
   },
   {
-    name: "Search",
-    icon: <SearchEndpointIcon size={20} />,
-    badge: "NEW",
-    description: "Search the web and get full content from results.",
+    key: "median",
+    header: "Median",
+    numeric: true,
+    render: (row) => <Money amount={row.medianPrice} />,
   },
   {
-    name: "Crawl",
-    icon: <CrawlIcon size={20} />,
-    description: "Crawl all the pages on a website and get data for each page.",
+    key: "trend",
+    header: "30d",
+    numeric: true,
+    render: (row) => (
+      <span className="inline-flex justify-end">
+        <TrendDelta value={row.trend30d} goodWhen="up" />
+      </span>
+    ),
   },
   {
-    name: "Extract",
-    icon: <ExtractIcon size={20} />,
-    description: "Get structured data from websites with AI.",
+    key: "listings",
+    header: "Listings",
+    numeric: true,
+    render: (row) => row.listings,
+  },
+  {
+    key: "days",
+    header: "Days to sell",
+    numeric: true,
+    render: (row) => `${row.daysToSell}d`,
   },
 ];
-
-const INTEGRATIONS = [
-  "Python",
-  "JS/TS SDK",
-  "Langchain",
-  "Langchain JS",
-  "LlamaIndex",
-  "Zapier",
-  "Make",
-  "Discord",
-  "CrewAI",
-  "Dify",
-  "Flowise",
-  "Pipedream",
-  "n8n",
-  "Composio",
-  "Langflow",
-  "Vectorize",
-  "CAMEL-AI",
-  "Praison AI",
-  "Superinterface",
-  "RAGaaS",
-  "Cargo",
-  "Pabbly Connect",
-];
-
-const EXAMPLE_PROJECTS = [
-  {
-    title: "30+ Examples",
-    description: "Collection of simple projects built with Firecrawl",
-    tags: ["TypeScript", "Python", "Firecrawl SDK"],
-  },
-  {
-    title: "LLMs.txt Generator",
-    description: "Generate an llms.txt with this web app built on Next.js",
-    tags: ["TypeScript", "Next.js", "Firecrawl SDK"],
-  },
-  {
-    title: "Trend Finder",
-    description: "Stay on top of trending topics on the web with AI",
-    tags: ["TypeScript", "Firecrawl SDK"],
-  },
-  {
-    title: "Open Deep Research",
-    description: "Open source version of OpenAI's Deep Research",
-    tags: ["Next.js", "AI SDK", "Firecrawl SDK"],
-  },
-  {
-    title: "Full App Examples",
-    description: "Full Firecrawl apps with source code and instructions",
-    tags: ["Python", "Typescript", "Firecrawl SDK"],
-  },
-];
-
-const MCP_SNIPPET = `{
-  "mcpServers": {
-    "firecrawl-mcp": {
-      "command": "npx",
-      "args": ["-y", "firecrawl-mcp"],
-      "env": {
-        "FIRECRAWL_API_KEY": "$API_KEY"
-      }
-    }
-  }
-}`;
-
-/** A 7-day series that peaks mid-window, matching the screenshot's curve. */
-const SERIES = Array.from({ length: 33 }, (_, index) => {
-  const x = (index - 17) / 3.1;
-  return Math.exp(-0.5 * x * x);
-});
-
-/* -------------------------------------------------------------------------
-   Page
-   ------------------------------------------------------------------------- */
 
 export default function OverviewPage() {
   return (
     <AppShell active="overview">
-      {/* ---------------------------------------------- Explore our endpoints */}
+      <PageHeader
+        title="Good morning, Sam"
+        description="Four things changed in your market overnight."
+        action={
+          <Button variant="primary" iconLeft={<ValuationIcon />}>
+            New appraisal
+          </Button>
+        }
+      />
+
+      {/*
+        The Advisor is ambient, but ambient-only costs discoverability — so it
+        gets one visible entry point on the page a dealer opens first.
+      */}
       <section className="border-b-1 border-border-faint bg-accent-white p-16 sm:p-24">
-        <h1 className="text-title-h5 text-accent-black">Explore our endpoints</h1>
-        <p className="mt-4 text-body-medium text-black-alpha-56">
-          Power your applications with our comprehensive scraping API
-        </p>
+        <button
+          type="button"
+          className="flex h-48 w-full cursor-pointer items-center gap-12 rounded-8 border-1 border-border-faint bg-background-lighter px-16 text-left transition hover:border-heat-40 hover:bg-accent-white"
+        >
+          <span className="text-heat-100">
+            <SearchIcon size={18} />
+          </span>
+          <span className="min-w-0 flex-1 truncate text-body-input text-black-alpha-48">
+            Ask anything — &ldquo;what should I pay for a 2020 320d Touring?&rdquo;
+          </span>
+        </button>
       </section>
 
-      <section className="relative grid grid-cols-1 bg-accent-white md:grid-cols-2 lg:grid-cols-4">
-        {ENDPOINTS.map((endpoint, index) => (
-          <article
-            key={endpoint.name}
-            className="group relative flex cursor-pointer flex-col gap-10 border-b-1 border-border-faint p-16 transition hover:bg-background-lighter sm:p-24 md:[&:nth-child(even)]:border-l-1 lg:border-l-1 lg:first:border-l-0"
+      <section className="grid grid-cols-1 border-b-1 border-border-faint bg-accent-white sm:grid-cols-2 lg:grid-cols-4">
+        <StatTile
+          label="Stock value"
+          value={<Money amount={chf(1284000)} />}
+          delta={<TrendDelta value={-0.021} goodWhen="up" />}
+          footnote="34 units"
+          className="border-b-1 border-border-faint sm:border-r-1 lg:border-b-0"
+        />
+        <StatTile
+          label="Avg. days on lot"
+          value="41d"
+          delta={<TrendDelta value={0.08} goodWhen="down" />}
+          footnote="8 units over 60 days"
+          className="border-b-1 border-border-faint lg:border-r-1 lg:border-b-0"
+        />
+        <StatTile
+          label="Open opportunities"
+          value="12"
+          footnote="Matching your saved searches"
+          className="border-b-1 border-border-faint sm:border-r-1 sm:border-b-0"
+        />
+        <StatTile label="Watched segments" value="6" footnote="2 moving sharply" />
+      </section>
+
+      {/* -------------------------------------------------- Needs attention */}
+      <section className="border-b-1 border-border-faint bg-accent-white">
+        <div className="flex items-center justify-between gap-16 border-b-1 border-border-faint p-16 sm:p-24">
+          <h2 className="text-label-x-large text-accent-black">
+            Needs your attention
+          </h2>
+          <Button size="small" href="/watchlists">
+            View all
+          </Button>
+        </div>
+
+        {ALERTS.map((alert) => (
+          <Link
+            key={alert.id}
+            href={alert.href}
+            className="group flex items-start gap-12 border-b-1 border-border-faint p-16 transition last:border-b-0 hover:bg-background-lighter sm:items-center sm:p-24"
           >
-            <span className="text-black-alpha-40 transition group-hover:text-heat-100">
-              {endpoint.icon}
+            <span className="mt-2 shrink-0 sm:mt-0">
+              <Badge tone={alert.kind === "deal" ? "heat" : "neutral"}>
+                {KIND_LABEL[alert.kind]}
+              </Badge>
             </span>
-            <div className="flex items-center gap-8">
-              <span className="text-label-large text-accent-black">
-                {endpoint.name}
+
+            <span className="flex min-w-0 flex-1 flex-col gap-2">
+              <span className="text-label-medium text-accent-black">
+                {alert.title}
               </span>
-              <span className="text-black-alpha-32 transition group-hover:translate-x-2 group-hover:text-heat-100">
-                <ArrowRightIcon size={14} />
+              <span className="text-body-medium text-black-alpha-56">
+                {alert.detail}
               </span>
-              {endpoint.badge ? <Badge tone="heat">{endpoint.badge}</Badge> : null}
-            </div>
-            <p className="text-body-medium text-black-alpha-56">
-              {endpoint.description}
-            </p>
-            {index > 0 ? (
-              <GridPlus className="-top-5 -left-5 hidden lg:block" />
-            ) : null}
-          </article>
+            </span>
+
+            <span className="hidden shrink-0 text-body-small text-black-alpha-40 sm:block">
+              {alert.when}
+            </span>
+            <span className="shrink-0 text-black-alpha-24 transition group-hover:translate-x-2 group-hover:text-heat-100">
+              <ArrowRightIcon size={14} />
+            </span>
+          </Link>
         ))}
       </section>
 
-      {/* Rhythm band — the grid keeps breathing even where there is no content. */}
-      <div className="h-32 border-b-1 border-border-faint bg-accent-white sm:h-64" />
-
-      {/* ------------------------------------------ Usage / key / integration */}
-      <section className="grid grid-cols-1 border-b-1 border-border-faint bg-accent-white lg:grid-cols-[1.35fr_1fr]">
-        <div className="flex min-w-0 flex-col">
-          <div className="border-b-1 border-border-faint p-16 sm:p-24">
-            <div className="flex items-start justify-between gap-16">
-              <div>
-                <h2 className="text-label-x-large text-accent-black">
-                  Scraped pages - Last 7 days
-                </h2>
-                <p className="mt-2 text-body-medium text-black-alpha-48">
-                  Credit usage differs
-                </p>
-              </div>
-              <span className="text-title-h3 text-accent-black">2</span>
-            </div>
-
-            <div className="mt-24">
-              <AreaChart data={SERIES} labels={["08/29", "09/01", "09/05"]} />
-            </div>
-          </div>
-
-          <div className="p-16 sm:p-24">
-            <div className="flex items-center gap-8">
-              <h2 className="text-label-x-large text-accent-black">
-                Concurrent Browsers
-              </h2>
-              <span className="flex items-center gap-6 font-mono text-mono-x-small text-heat-100">
-                <span
-                  className="size-6 animate-heat-pulse rounded-full bg-heat-100"
-                  aria-hidden="true"
-                />
-                [ LIVE ]
-              </span>
-            </div>
-            <p className="mt-4 text-body-medium text-black-alpha-56">
-              # of active browsers —{" "}
-              <a className="text-heat-100 underline underline-offset-2" href="#">
-                upgrade plan
-              </a>{" "}
-              for faster scraping
-            </p>
-
-            <div className="mt-24 flex items-center gap-12">
-              <span className="flex-center size-40 rounded-full border-1 border-border-loud font-mono text-mono-medium text-black-alpha-64">
-                0
-              </span>
-              <span className="text-body-medium text-black-alpha-56">
-                of <span className="text-accent-black">2</span> active browsers
-              </span>
-            </div>
-          </div>
+      {/* ------------------------------------------------ Watched segments */}
+      <section className="border-b-1 border-border-faint bg-accent-white">
+        <div className="flex items-center justify-between gap-16 border-b-1 border-border-faint p-16 sm:p-24">
+          <h2 className="text-label-x-large text-accent-black">
+            Your segments
+          </h2>
+          <Button size="small" href="/market" iconRight={<ArrowRightIcon size={14} />}>
+            Explore market
+          </Button>
         </div>
-
-        <div className="flex min-w-0 flex-col border-t-1 border-border-faint lg:border-t-0 lg:border-l-1">
-          <div className="border-b-1 border-border-faint p-16 sm:p-24">
-            <h2 className="text-label-x-large text-accent-black">API Key</h2>
-            <p className="mt-2 text-body-medium text-black-alpha-48">
-              Start scraping right away
-            </p>
-
-            <div className="mt-16 flex h-40 items-center gap-8 rounded-8 border-1 border-heat-16 bg-heat-4 px-12">
-              <code className="min-w-0 flex-1 truncate font-mono text-mono-small text-heat-100">
-                fc-9************************aebf
-              </code>
-              <IconButton label="Reveal API key" className="text-heat-100">
-                <EyeIcon />
-              </IconButton>
-              <IconButton label="Copy API key" className="text-heat-100">
-                <CopyIcon />
-              </IconButton>
-            </div>
-          </div>
-
-          <div className="p-16 sm:p-24">
-            <div className="flex items-start justify-between gap-16">
-              <div>
-                <h2 className="text-label-x-large text-accent-black">
-                  MCP Integration
-                </h2>
-                <p className="mt-2 text-body-medium text-black-alpha-48">
-                  Connect with AI tools
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                <IconButton label="Reveal configuration">
-                  <EyeIcon />
-                </IconButton>
-                <IconButton label="Copy configuration">
-                  <CopyIcon />
-                </IconButton>
-              </div>
-            </div>
-
-            <CodeBlock code={MCP_SNIPPET} className="mt-16" />
-          </div>
-        </div>
+        <DataTable
+          columns={segmentColumns}
+          rows={SEGMENTS}
+          getRowKey={(row) => row.id}
+        />
       </section>
 
-      {/* -------------------------------- Integrations / example projects */}
-      <section className="grid grid-cols-1 bg-accent-white lg:grid-cols-[1.35fr_1fr]">
-        <div className="min-w-0">
-          <div className="border-b-1 border-border-faint p-16 sm:p-24">
-            <h2 className="text-label-x-large text-accent-black">Integrations</h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {INTEGRATIONS.map((name) => (
-              <a
-                key={name}
-                href="#"
-                className="group flex items-center gap-10 border-r-1 border-b-1 border-border-faint p-16 transition hover:bg-background-lighter"
-              >
-                <span
-                  className="flex-center size-24 shrink-0 rounded-6 bg-black-alpha-5 text-label-x-small text-black-alpha-64"
-                  aria-hidden="true"
-                >
-                  {name.charAt(0)}
-                </span>
-                <span className="flex-1 text-label-medium text-accent-black">
-                  {name}
-                </span>
-                <span className="text-black-alpha-24 transition group-hover:text-heat-100">
-                  <ExternalIcon size={14} />
-                </span>
-              </a>
-            ))}
-          </div>
-        </div>
-
-        <div className="relative min-w-0 border-t-1 border-border-faint lg:border-t-0 lg:border-l-1">
-          <div className="relative overflow-hidden border-b-1 border-border-faint p-16 sm:p-24">
-            <div className="absolute -top-8 right-0 opacity-60">
-              <AsciiField rows={8} cols={52} seed={11} />
-            </div>
-            <h2 className="relative text-label-x-large text-accent-black">
-              Example Projects
-            </h2>
-          </div>
-
-          {EXAMPLE_PROJECTS.map((project) => (
-            <a
-              key={project.title}
-              href="#"
-              className="group flex flex-col gap-8 border-b-1 border-border-faint p-16 transition hover:bg-background-lighter sm:p-24"
-            >
-              <div className="flex items-start justify-between gap-16">
-                <h3 className="font-mono text-mono-medium text-accent-black">
-                  {project.title}
-                </h3>
-                <span className="mt-2 text-black-alpha-24 transition group-hover:text-heat-100">
-                  <ExternalIcon size={14} />
-                </span>
-              </div>
-              <p className="text-body-medium text-black-alpha-56">
-                {project.description}
-              </p>
-              <div className="flex flex-wrap gap-6">
-                {project.tags.map((tag) => (
-                  <Tag key={tag}>{tag}</Tag>
-                ))}
-              </div>
-            </a>
-          ))}
-        </div>
+      <section className="bg-accent-white">
+        <EmptyState
+          title="Connect your inventory to unlock stock intelligence"
+          description="Stock value and days-on-lot above are sample figures. Once your units are in, AutoFlair prices each one against live market data and tells you which to reprice, hold or wholesale."
+          bullets={[
+            "Per-unit market position against comparable live listings",
+            "Ageing alerts before a unit becomes hard to move",
+            "Recommended action per unit, with the reasoning behind it",
+          ]}
+          action={<Button variant="primary">Connect inventory</Button>}
+        />
       </section>
     </AppShell>
   );
